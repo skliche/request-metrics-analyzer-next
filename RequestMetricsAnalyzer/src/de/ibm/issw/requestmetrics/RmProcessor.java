@@ -33,7 +33,11 @@ public class RmProcessor {
 			BufferedReader inputStream = new BufferedReader(inputFileReader);
 			String line = null;
 			while ((line = inputStream.readLine()) != null) {
-				processSingleLine(line);
+				RMRecord record = processSingleLine(line);
+				if(record != null) {
+					// process the record 
+					addRmRecordToDataset(record);
+				}
 				processedLines++;
 			}
 
@@ -46,7 +50,16 @@ public class RmProcessor {
 		return useCaseRootList;
 	}
 
-	private void processSingleLine(String line) {
+	/**
+	 * processes a single line and creates the java record representation out of it
+	 * @param line the line
+	 * @return RMRecord the record that has been generated or null if the line is not a valid log statement
+	 * 
+	 */
+	private RMRecord processSingleLine(String line) {
+		RMRecord record = null;
+		
+		// parse the log using a REGEX
 		Matcher logMatcher = PATTERN.matcher(line);
 		if(logMatcher.matches()) {
 			String logFileName = logMatcher.group(1);
@@ -70,34 +83,45 @@ public class RmProcessor {
 			String currentDetail = logMatcher.group(17);
 			String currentElapsed = logMatcher.group(18);
 			
-			//TODO: further optimize this
+			//TODO: further optimize this - we want java objects
 			String time = timestamp.split(" ")[1];
 			String date = timestamp.split(" ")[0];
+			
 			//ver=1,ip=127.0.0.1,time=1432493583679,pid=436,reqid=132797,event=1
 			String currentCmp ="ver="+ currentVersion + ",ip=" + currentIp + ",time=" + currentTimestamp + ",pid=" + currentPid + ",reqid=" + currentRequestId + ",event=" + currentEvent; 
 			String parentCmp = "ver="+ parentVersion + ",ip=" + parentIp + ",time=" + parentTimestamp + ",pid=" + parentPid + ",reqid=" + parentRequestId + ",event=" + parentEvent;
 			
 			// create the record from the log line
-			RMRecord recRM = new RMRecord(logFileName, threadId, currentCmp, parentCmp, currentType, currentDetail, currentElapsed, time, date);
-			// add the record to a node
-			RMNode rmNode = new RMNode(recRM);
+			record = new RMRecord(logFileName, threadId, 
+									currentCmp, parentCmp, 
+									currentType, currentDetail, 
+									currentElapsed, time, date);
+		}
+		return record;
+	}
 
-			if (currentCmp.equals(parentCmp)) {
-				Long elapsedTimeLong = new Long(currentElapsed);
-				if (elapsedTimeBorder == null || elapsedTimeLong > elapsedTimeBorder) {
-					this.rmCases++;
-					useCaseRootList.put(recRM.getRmRecId(), rmNode);
-				}
+	private void addRmRecordToDataset(RMRecord rmRecord) {
+		// add the record to a node - we always create a node
+		RMNode rmNode = new RMNode(rmRecord);
+
+		// if the current record-id is the same as the parent-id, then we have a root-record
+		if (rmRecord.getCurrentCmp().equals(rmRecord.getParentCmp())) {
+			// filter by time
+			Long elapsedTimeLong = Long.parseLong(rmRecord.getElapsedTime());
+			if (elapsedTimeBorder == null || elapsedTimeLong > elapsedTimeBorder) {
+				this.rmCases++;
+				// we mark the record as root record and put it in the list of root-records
+				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
+			}
+		// otherwise the the current record is a child-record
+		} else {
+			List<RMNode> parentContaineesList = parentNodesMap.get(RMRecord.generateRmRecId(rmRecord.getThreadId(), rmRecord.getParentCmp()));
+			if (parentContaineesList != null) {
+				parentContaineesList.add(rmNode);
 			} else {
-				RMRecord dummyRMRec = new RMRecord(logFileName, threadId, parentCmp, "", "", "", "", "", "");
-				if (parentNodesMap.containsKey(dummyRMRec.getRmRecId())) {
-					List<RMNode> parentContaineesList = parentNodesMap.get(dummyRMRec.getRmRecId());
-					parentContaineesList.add(rmNode);
-				} else {
-					List<RMNode> parentContaineesList = new ArrayList<RMNode>();
-					parentNodesMap.put(dummyRMRec.getRmRecId(), parentContaineesList);
-					parentContaineesList.add(rmNode);
-				}
+				parentContaineesList = new ArrayList<RMNode>();
+				parentNodesMap.put(RMRecord.generateRmRecId(rmRecord.getThreadId(), rmRecord.getParentCmp()), parentContaineesList);
+				parentContaineesList.add(rmNode);
 			}
 		}
 	}
@@ -120,5 +144,13 @@ public class RmProcessor {
 
 	public Map<String, RMNode> getUseCaseRootList() {
 		return useCaseRootList;
+	}
+
+	public List<RMNode> getChildrenByParentNodeId(String rmRecId) {
+		List<RMNode> result = parentNodesMap.get(rmRecId);
+		if(result == null) {
+			result = new ArrayList<RMNode>();
+		}
+		return result;
 	}
 }
