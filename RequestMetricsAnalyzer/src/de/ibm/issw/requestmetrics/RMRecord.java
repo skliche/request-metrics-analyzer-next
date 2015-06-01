@@ -11,7 +11,7 @@ public class RMRecord implements Serializable {
 	private String parentCmp;
 	private String typeCmp;
 	private String detailCmp;
-	private String elapsedTime;
+	private Long elapsedTime;
 	private String recTime;
 	private String recDate;
 
@@ -19,7 +19,7 @@ public class RMRecord implements Serializable {
 	}
 
 	public RMRecord(String logSource, String threadId, String currentCmp, String parentCmp,
-			String typeCmp, String detailCmp, String elapsedTime,
+			String typeCmp, String detailCmp, Long elapsedTime,
 			String recTime, String recDate) {
 		this.logSource = logSource;
 		this.threadId = threadId;
@@ -49,11 +49,11 @@ public class RMRecord implements Serializable {
 		this.detailCmp = detailCmp;
 	}
 
-	public String getElapsedTime() {
+	public Long getElapsedTime() {
 		return this.elapsedTime;
 	}
 
-	public void setElapsedTime(String elapsedTime) {
+	public void setElapsedTime(Long elapsedTime) {
 		this.elapsedTime = elapsedTime;
 	}
 

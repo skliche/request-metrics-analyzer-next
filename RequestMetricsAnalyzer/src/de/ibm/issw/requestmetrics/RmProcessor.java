@@ -20,13 +20,13 @@ public class RmProcessor {
 	private Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
 	private Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
 
-	private Long elapsedTimeBorder;
+	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
-	private Long rmCases;
+	private Long numberOfCases;
 	
-	public Map<String, RMNode> processInputFile(String inputFileName) {
+	public void processInputFile(String inputFileName) {
 		this.processedLines = 0l;
-		this.rmCases = 0l;
+		this.numberOfCases = 0l;
 		
 		try {
 			FileReader inputFileReader = new FileReader(inputFileName);
@@ -43,11 +43,10 @@ public class RmProcessor {
 
 			inputStream.close();
 			LOG.info("Processed " + this.processedLines + " lines of PMRM0003I type.");
-			LOG.info("Number of testCase tables found: " + this.rmCases);
+			LOG.info("Number of testCase tables found: " + this.numberOfCases);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return useCaseRootList;
 	}
 
 	/**
@@ -81,7 +80,7 @@ public class RmProcessor {
 			String currentEvent = logMatcher.group(15);
 			String currentType = logMatcher.group(16);
 			String currentDetail = logMatcher.group(17);
-			String currentElapsed = logMatcher.group(18);
+			Long currentElapsed = Long.parseLong(logMatcher.group(18));
 			
 			//TODO: further optimize this - we want java objects
 			String time = timestamp.split(" ")[1];
@@ -107,9 +106,8 @@ public class RmProcessor {
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.getCurrentCmp().equals(rmRecord.getParentCmp())) {
 			// filter by time
-			Long elapsedTimeLong = Long.parseLong(rmRecord.getElapsedTime());
-			if (elapsedTimeBorder == null || elapsedTimeLong > elapsedTimeBorder) {
-				this.rmCases++;
+			if (rmRecord.getElapsedTime() > elapsedTimeBorder) {
+				this.numberOfCases++;
 				// we mark the record as root record and put it in the list of root-records
 				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
 			}
@@ -138,8 +136,8 @@ public class RmProcessor {
 		return processedLines;
 	}
 
-	public Long getRmCases() {
-		return rmCases;
+	public Long getNumberOfCases() {
+		return numberOfCases;
 	}
 
 	public Map<String, RMNode> getUseCaseRootList() {
