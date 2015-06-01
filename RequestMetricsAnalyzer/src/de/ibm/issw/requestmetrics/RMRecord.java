@@ -30,25 +30,15 @@ public class RMRecord implements Serializable {
 		this.elapsedTime = elapsedTime;
 		this.recTime = recTime;
 		this.recDate = recDate;
-		updateRmRecId();
+		this.rmRecId = generateRmRecId(threadId, currentCmp);
 	}
 
 	public String getThreadId() {
 		return this.threadId;
 	}
 
-	public void setThreadId(String threadId) {
-		this.threadId = threadId;
-		updateRmRecId();
-	}
-
 	public String getCurrentCmp() {
 		return this.currentCmp;
-	}
-
-	public void setCurrentCmp(String currentCmp) {
-		this.currentCmp = currentCmp;
-		updateRmRecId();
 	}
 
 	public String getDetailCmp() {
@@ -119,8 +109,8 @@ public class RMRecord implements Serializable {
 		return this.rmRecId;
 	}
 
-	private void updateRmRecId() {
-		this.rmRecId = (this.threadId + "," + this.currentCmp);
+	public static String generateRmRecId(String threadId, String currentCmp) {
+		return threadId + "," + currentCmp;
 	}
 
 	public String determineRMRecDesc() {

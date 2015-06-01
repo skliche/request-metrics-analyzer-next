@@ -11,16 +11,11 @@ public class RMNode {
 	}
 
 	public RMNode(RMRecord rmData) {
-		this();
-		setData(rmData);
+		this.rmData = rmData;
 	}
 
 	public List<RMNode> getChildren() {
 		return this.children;
-	}
-
-	public void setChildren(List<RMNode> children) {
-		this.children = children;
 	}
 
 	public int getNumberOfChildren() {
