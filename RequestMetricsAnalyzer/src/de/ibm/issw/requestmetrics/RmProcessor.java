@@ -4,10 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,13 +14,12 @@ import java.util.regex.Pattern;
 public class RmProcessor {
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
 
-	//TODO: remove constant
-	private static final String REQ_MET = "PMRM0003I";
 	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+) type=(\\w+) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN = Pattern.compile(REGEX);
 
-	private Map<String, List<RMNode>> parentNodesMap = new Hashtable<String, List<RMNode>>();
-	private Map<String, RMNode> useCaseRootList = new Hashtable<String, RMNode>();
+	private Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
+	private Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
+
 	private Long elapsedTimeBorder;
 	private Long processedLines;
 	private Long rmCases;
@@ -36,6 +34,7 @@ public class RmProcessor {
 			String line = null;
 			while ((line = inputStream.readLine()) != null) {
 				processSingleLine(line);
+				processedLines++;
 			}
 
 			inputStream.close();
@@ -74,123 +73,32 @@ public class RmProcessor {
 			//TODO: further optimize this
 			String time = timestamp.split(" ")[1];
 			String date = timestamp.split(" ")[0];
-			////ver=1,ip=127.0.0.1,time=1432493583679,pid=436,reqid=132797,event=1
+			//ver=1,ip=127.0.0.1,time=1432493583679,pid=436,reqid=132797,event=1
 			String currentCmp ="ver="+ currentVersion + ",ip=" + currentIp + ",time=" + currentTimestamp + ",pid=" + currentPid + ",reqid=" + currentRequestId + ",event=" + currentEvent; 
 			String parentCmp = "ver="+ parentVersion + ",ip=" + parentIp + ",time=" + parentTimestamp + ",pid=" + parentPid + ",reqid=" + parentRequestId + ",event=" + parentEvent;
 			
-			RMRecord recRM = new RMRecord(threadId, currentCmp, parentCmp, currentType, currentDetail, currentElapsed, time, date);
-			
-		}
-		
-		if (line.length() > 0) {
-			if (line.charAt(0) != "[".charAt(0)) {
-				int pos1 = line.indexOf(":");
-				if (pos1 > 0) {
-					line = line.substring(pos1 + 1);
+			// create the record from the log line
+			RMRecord recRM = new RMRecord(logFileName, threadId, currentCmp, parentCmp, currentType, currentDetail, currentElapsed, time, date);
+			// add the record to a node
+			RMNode rmNode = new RMNode(recRM);
+
+			if (currentCmp.equals(parentCmp)) {
+				Long elapsedTimeLong = new Long(currentElapsed);
+				if (elapsedTimeBorder == null || elapsedTimeLong > elapsedTimeBorder) {
+					this.rmCases++;
+					useCaseRootList.put(recRM.getRmRecId(), rmNode);
+				}
+			} else {
+				RMRecord dummyRMRec = new RMRecord(logFileName, threadId, parentCmp, "", "", "", "", "", "");
+				if (parentNodesMap.containsKey(dummyRMRec.getRmRecId())) {
+					List<RMNode> parentContaineesList = parentNodesMap.get(dummyRMRec.getRmRecId());
+					parentContaineesList.add(rmNode);
+				} else {
+					List<RMNode> parentContaineesList = new ArrayList<RMNode>();
+					parentNodesMap.put(dummyRMRec.getRmRecId(), parentContaineesList);
+					parentContaineesList.add(rmNode);
 				}
 			}
-			if (line.charAt(0) == "[".charAt(0)) {
-				int posMsg = -1;
-				if (posMsg == -1) {
-					Matcher matcher = Pattern.compile(" [A-Z] ").matcher(line);
-					if (matcher.find()) {
-						posMsg = matcher.end();
-					} else {
-						posMsg = 50;
-					}
-				}
-				String lineSysInfo = line.substring(0, posMsg);
-
-				String lineDateTime = lineSysInfo.substring(1, lineSysInfo.indexOf("]"));
-
-				lineSysInfo = lineSysInfo.substring(lineSysInfo.indexOf("]") + 1);
-				StringTokenizer st = new StringTokenizer(lineDateTime, " ");
-				String lineDate = st.nextToken();
-				if (lineDate.length() != 8) {
-					StringTokenizer locST = new StringTokenizer(lineDate, "/");
-					String dateLine = "";
-					do {
-						String token = locST.nextToken();
-						if (token.length() == 1)
-							token = "0" + token;
-						dateLine = dateLine + token + "/";
-					} while (locST.hasMoreTokens());
-					lineDate = dateLine.substring(0, 8);
-				}
-
-				String lineTime = st.nextToken();
-
-				String lineZone = st.nextToken();
-
-				st = new StringTokenizer(lineSysInfo, " ");
-				String lineThreadId = st.nextToken();
-
-				String lineComponent = st.nextToken();
-
-				String lineMsgType = st.nextToken();
-
-				String lineMsg = line.substring(posMsg).trim();
-
-				st = new StringTokenizer(lineMsg, " ");
-				if (st.hasMoreTokens()) {
-					String lineMsgNum = st.nextToken();
-					if (lineMsgNum.contains(":")) {
-						lineMsgNum = lineMsgNum.substring(0, lineMsgNum.indexOf(":"));
-					}
-
-					if (lineMsgNum.equalsIgnoreCase(REQ_MET)) {
-						int relPos = 0;
-						this.processedLines++;
-						String newRMMsg = lineMsg.substring(lineMsg.indexOf(st.nextToken()));
-
-						relPos = newRMMsg.indexOf("current:") - 3;
-						String parentCmp = newRMMsg.substring("parent:".length(), relPos);
-
-						newRMMsg = newRMMsg.substring(relPos + 3);
-						relPos = newRMMsg.indexOf("type=") - 1;
-						String currentCmp = newRMMsg.substring("current:".length(), relPos);
-
-						newRMMsg = newRMMsg.substring(relPos + 1);
-						relPos = newRMMsg.indexOf("detail=") - 1;
-						String typeCmp = newRMMsg.substring("type=".length(), relPos);
-
-						newRMMsg = newRMMsg.substring(relPos + 1);
-						relPos = newRMMsg.indexOf("elapsed=") - 1;
-						String detailCmp = newRMMsg.substring("detail=".length(), relPos);
-
-						newRMMsg = newRMMsg.substring(relPos + 1);
-						String elapsedTime = newRMMsg.substring("elapsed=".length());
-
-						RMRecord recRM = new RMRecord(lineThreadId, currentCmp, parentCmp, typeCmp, detailCmp, elapsedTime, lineTime, lineDate);
-
-						RMNode rmNode = new RMNode(recRM);
-
-						RMRecord dummyRMRec = new RMRecord(lineThreadId, parentCmp, "", "", "", "", "", "");
-						String parentRMRecId = dummyRMRec.getRmRecId();
-
-						if (!currentCmp.equals(parentCmp)) {
-							List<RMNode> parentContaineesList;
-							if (parentNodesMap.containsKey(parentRMRecId)) {
-								parentContaineesList = parentNodesMap.get(parentRMRecId);
-							} else {
-								parentContaineesList = new ArrayList<RMNode>();
-								parentNodesMap.put(parentRMRecId, parentContaineesList);
-							}
-							parentContaineesList.add(rmNode);
-						} else {
-							Long elapsedTimeLong = new Long(elapsedTime);
-							if (elapsedTimeBorder == null || elapsedTimeLong > elapsedTimeBorder) {
-								this.rmCases++;
-								useCaseRootList.put(recRM.getRmRecId(), rmNode);
-							}
-						}
-
-					}
-
-				}
-
-			}
-
 		}
 	}
 

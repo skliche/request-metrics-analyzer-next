@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 @SuppressWarnings("serial")
 public class RMRecord implements Serializable {
+	private String logSource;
 	private String rmRecId;
 	private String threadId;
 	private String currentCmp;
@@ -17,9 +18,10 @@ public class RMRecord implements Serializable {
 	public RMRecord() {
 	}
 
-	public RMRecord(String threadId, String currentCmp, String parentCmp,
+	public RMRecord(String logSource, String threadId, String currentCmp, String parentCmp,
 			String typeCmp, String detailCmp, String elapsedTime,
 			String recTime, String recDate) {
+		this.logSource = logSource;
 		this.threadId = threadId;
 		this.currentCmp = currentCmp;
 		this.parentCmp = parentCmp;
@@ -95,6 +97,14 @@ public class RMRecord implements Serializable {
 
 	public void setTypeCmp(String typeCmp) {
 		this.typeCmp = typeCmp;
+	}
+
+	public String getLogSource() {
+		return logSource;
+	}
+
+	public void setLogSource(String logSource) {
+		this.logSource = logSource;
 	}
 
 	public String toString() {
