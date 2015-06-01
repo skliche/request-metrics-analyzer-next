@@ -24,6 +24,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import de.ibm.issw.requestmetrics.RMNode;
 import de.ibm.issw.requestmetrics.RMRecord;
@@ -45,24 +46,19 @@ public class Starter extends JPanel {
 	
 	private void getRecursive(SortableNode node, RMNode rmNode) {
 		String rmRecId = rmNode.getData().getRmRecId();
-		if (processor.getParentNodesMap().containsKey(rmRecId)) {
-			List<RMNode> rmRecChildren = processor.getParentNodesMap().get(rmRecId);
+		List<RMNode> rmRecChildren = processor.getChildrenByParentNodeId(rmRecId);
 
-			for (RMNode childRMRecNode : rmRecChildren) {
-				SortableNode childElement = new SortableNode(childRMRecNode.getData().determineRMRecDesc());
-				node.add(childElement);
-				getRecursive(childElement, childRMRecNode);
-			}
+		for (RMNode childRMRecNode : rmRecChildren) {
+			SortableNode childElement = new SortableNode(childRMRecNode.getData().determineRMRecDesc());
+			node.add(childElement);
+			getRecursive(childElement, childRMRecNode);
 		}
 	}
 
 	public Starter(RMNode useCaseRootNode) {
 		setLayout(new BorderLayout());
-		RMRecord rootRMRec = useCaseRootNode.getData();
-		String root_desc = rootRMRec.determineRMRecDesc();
-
-		SortableNode root = new SortableNode(root_desc);
-
+		
+		SortableNode root = new SortableNode(useCaseRootNode.getData().determineRMRecDesc());
 		getRecursive(root, useCaseRootNode);
 
 		JTree tree = new JTree(root);
@@ -73,22 +69,6 @@ public class Starter extends JPanel {
 		JScrollPane scrollpane = new JScrollPane();
 		scrollpane.getViewport().add(tree);
 		add("Center", scrollpane);
-
-		if (debug) {
-			String tabs = "   ";
-			System.out.println("Tree built for : " + root_desc + " is:");
-			for (int i = 0; i < tree.getRowCount(); i++) {
-				int rowLevel = tree.getPathForRow(i).getPathCount();
-				String pathString = tree.getPathForRow(i).getPathComponent(rowLevel - 1).toString();
-				if (rowLevel > 1) {
-					pathString = "|- " + pathString;
-				}
-				for (int j = 2; j < rowLevel; j++) {
-					pathString = tabs + pathString;
-				}
-				System.out.println(pathString);
-			}
-		}
 	}
 
 	public Dimension getMinimumSize() {
@@ -125,7 +105,7 @@ public class Starter extends JPanel {
 		if(!parametererror) {
 			// we can parse the file now
 			processor.processInputFile(inputFileName);		
-			
+
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
 					Starter.createAndShowGUI();
