@@ -1,9 +1,6 @@
 package de.ibm.issw.requestmetrics;
 
-import java.io.Serializable;
-
-@SuppressWarnings("serial")
-public class RMRecord implements Serializable {
+public class RMRecord {
 	private String logSource;
 	private String rmRecId;
 	private String threadId;
