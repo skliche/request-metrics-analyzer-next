@@ -10,7 +10,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +22,8 @@ public class RmProcessor {
 
 	private Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
 	private Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
-
+	private List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
+	
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
 	private Long numberOfCases;
@@ -118,6 +118,9 @@ public class RmProcessor {
 				this.numberOfCases++;
 				// we mark the record as root record and put it in the list of root-records
 				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
+				
+				RmRootCase rootCase = new RmRootCase(rmRecord);
+				rootCases.add(rootCase);
 			}
 		// otherwise the the current record is a child-record
 		} else {
@@ -160,7 +163,7 @@ public class RmProcessor {
 		return result;
 	}
 
-	public Set<String> getUseCases() {
-		return useCaseRootList.keySet();
+	public List<RmRootCase> getUseCases() {
+		return this.rootCases;
 	}
 }

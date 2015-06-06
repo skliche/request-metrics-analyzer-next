@@ -16,6 +16,7 @@ import javax.swing.event.ListSelectionListener;
 
 import de.ibm.issw.requestmetrics.RMNode;
 import de.ibm.issw.requestmetrics.RmProcessor;
+import de.ibm.issw.requestmetrics.RmRootCase;
 
 public class RequestMetricsGui extends JPanel{
 	// GUI elements
@@ -33,16 +34,16 @@ public class RequestMetricsGui extends JPanel{
 	
 	public static void createAndShowGUI(final RmProcessor processor) {
 		// populate use case list
-		JList<String> jlist = new JList<String>(processor.getUseCases().toArray(new String[0])); 
+		JList<RmRootCase> jlist = new JList<RmRootCase>(processor.getUseCases().toArray(new RmRootCase[0])); 
 		jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		// add selection listener to select the use cases
 		jlist.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
-				JList<String> list = (JList<String>) event.getSource();
+				JList<RmRootCase> list = (JList<RmRootCase>) event.getSource();
 
-				String useCase = list.getSelectedValue();
-				RMNode rmRecRoot = processor.getUseCaseRootList().get(useCase);
+				RmRootCase useCase = list.getSelectedValue();
+				RMNode rmRecRoot = processor.getUseCaseRootList().get(useCase.getRmNode().getRmRecId());
 				JPanel jpanel = new UsecasePanel(rmRecRoot, processor);
 				RequestMetricsGui.treeInternalFrame.setVisible(false);
 				RequestMetricsGui.treeInternalFrame.getContentPane().removeAll();

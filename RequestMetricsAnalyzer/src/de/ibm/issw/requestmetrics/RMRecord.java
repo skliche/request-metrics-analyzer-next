@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class RMRecord {
+	private static SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+	
 	private String logSource;
 	private Date logTimeStamp;
 	private String rmRecId;
@@ -95,7 +97,6 @@ public class RMRecord {
 	}
 
 	public String determineRMRecDesc() {
-		SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 		
 		return getElapsedTime() + "ms | " + sdf.format(logTimeStamp) 
 				+ " | " + getThreadId() + " | " + getTypeCmp() + " | "
