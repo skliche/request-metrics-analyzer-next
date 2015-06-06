@@ -5,7 +5,6 @@ import javax.swing.SwingUtilities;
 import de.ibm.issw.requestmetrics.RmProcessor;
 import de.ibm.issw.requestmetrics.gui.RequestMetricsGui;
 
-@SuppressWarnings("serial")
 public class Starter {
 	private static boolean debug = false;
 
