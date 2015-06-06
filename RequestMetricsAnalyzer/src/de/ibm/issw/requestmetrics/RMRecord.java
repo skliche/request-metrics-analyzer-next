@@ -1,32 +1,32 @@
 package de.ibm.issw.requestmetrics;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class RMRecord {
 	private String logSource;
+	private Date logTimeStamp;
 	private String rmRecId;
 	private String threadId;
-	private String currentCmp;
-	private String parentCmp;
+	private RMComponent currentCmp;
+	private RMComponent parentCmp;
 	private String typeCmp;
 	private String detailCmp;
 	private Long elapsedTime;
-	private String recTime;
-	private String recDate;
-
+	
 	public RMRecord() {
 	}
 
-	public RMRecord(String logSource, String threadId, String currentCmp, String parentCmp,
-			String typeCmp, String detailCmp, Long elapsedTime,
-			String recTime, String recDate) {
+	public RMRecord(String logSource, Date logTimestamp, String threadId, RMComponent currentCmp, RMComponent parentCmp,
+			String typeCmp, String detailCmp, Long elapsedTime) {
 		this.logSource = logSource;
+		this.logTimeStamp = logTimestamp;
 		this.threadId = threadId;
 		this.currentCmp = currentCmp;
 		this.parentCmp = parentCmp;
 		this.typeCmp = typeCmp;
 		this.detailCmp = detailCmp;
 		this.elapsedTime = elapsedTime;
-		this.recTime = recTime;
-		this.recDate = recDate;
 		this.rmRecId = generateRmRecId(threadId, currentCmp);
 	}
 
@@ -34,7 +34,7 @@ public class RMRecord {
 		return this.threadId;
 	}
 
-	public String getCurrentCmp() {
+	public RMComponent getCurrentCmp() {
 		return this.currentCmp;
 	}
 
@@ -54,28 +54,8 @@ public class RMRecord {
 		this.elapsedTime = elapsedTime;
 	}
 
-	public String getParentCmp() {
+	public RMComponent getParentCmp() {
 		return this.parentCmp;
-	}
-
-	public void setParentCmp(String parentCmp) {
-		this.parentCmp = parentCmp;
-	}
-
-	public String getRecDate() {
-		return this.recDate;
-	}
-
-	public void setRecDate(String recDate) {
-		this.recDate = recDate;
-	}
-
-	public String getRecTime() {
-		return this.recTime;
-	}
-
-	public void setRecTime(String recTime) {
-		this.recTime = recTime;
 	}
 
 	public String getTypeCmp() {
@@ -95,7 +75,7 @@ public class RMRecord {
 	}
 
 	public String toString() {
-		String recordRM = this.recDate + "|" + this.recTime + "|"
+		String recordRM = this.logTimeStamp + "|"
 				+ this.elapsedTime + "|" + this.threadId + "|" + this.parentCmp
 				+ "|" + this.currentCmp + "|" + this.typeCmp + "|"
 				+ this.detailCmp + "|";
@@ -106,12 +86,18 @@ public class RMRecord {
 		return this.rmRecId;
 	}
 
-	public static String generateRmRecId(String threadId, String currentCmp) {
+	public static String generateRmRecId(String threadId, RMComponent currentCmp) {
 		return threadId + "," + currentCmp;
 	}
 
+	public Date getLogTimeStamp() {
+		return logTimeStamp;
+	}
+
 	public String determineRMRecDesc() {
-		return getElapsedTime() + "ms | " + getRecDate() + " " + getRecTime()
+		SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+		
+		return getElapsedTime() + "ms | " + sdf.format(logTimeStamp) 
 				+ " | " + getThreadId() + " | " + getTypeCmp() + " | "
 				+ getDetailCmp();
 	}

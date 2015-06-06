@@ -3,10 +3,14 @@ package de.ibm.issw.requestmetrics;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,23 +82,27 @@ public class RmProcessor {
 			String currentPid = logMatcher.group(13);
 			String currentRequestId = logMatcher.group(14);
 			String currentEvent = logMatcher.group(15);
-			String currentType = logMatcher.group(16);
-			String currentDetail = logMatcher.group(17);
+			String type = logMatcher.group(16);
+			String detail = logMatcher.group(17);
 			Long currentElapsed = Long.parseLong(logMatcher.group(18));
 			
-			//TODO: further optimize this - we want java objects
-			String time = timestamp.split(" ")[1];
-			String date = timestamp.split(" ")[0];
+			Date recordDate = null; //[5/28/15 11:10:39:507 EDT]
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat("M/d/y h:m:s:S z");
+				recordDate = sdf.parse(timestamp);
+			} catch (ParseException e) {
+				LOG.severe("could not parse the log timestamp: " + timestamp);
+				
+			}
 			
-			//ver=1,ip=127.0.0.1,time=1432493583679,pid=436,reqid=132797,event=1
-			String currentCmp ="ver="+ currentVersion + ",ip=" + currentIp + ",time=" + currentTimestamp + ",pid=" + currentPid + ",reqid=" + currentRequestId + ",event=" + currentEvent; 
-			String parentCmp = "ver="+ parentVersion + ",ip=" + parentIp + ",time=" + parentTimestamp + ",pid=" + parentPid + ",reqid=" + parentRequestId + ",event=" + parentEvent;
+			RMComponent currentCmp = new RMComponent(currentVersion, currentIp, currentTimestamp, currentPid, currentRequestId, currentEvent);
+			RMComponent parentCmp = new RMComponent(parentVersion, parentIp, parentTimestamp, parentPid, parentRequestId, parentEvent);
 			
 			// create the record from the log line
-			record = new RMRecord(logFileName, threadId, 
+			record = new RMRecord(logFileName, recordDate, threadId, 
 									currentCmp, parentCmp, 
-									currentType, currentDetail, 
-									currentElapsed, time, date);
+									type, detail, 
+									currentElapsed);
 		}
 		return record;
 	}
@@ -104,7 +112,7 @@ public class RmProcessor {
 		RMNode rmNode = new RMNode(rmRecord);
 
 		// if the current record-id is the same as the parent-id, then we have a root-record
-		if (rmRecord.getCurrentCmp().equals(rmRecord.getParentCmp())) {
+		if (rmRecord.getCurrentCmp().toString().equals(rmRecord.getParentCmp().toString())) {
 			// filter by time
 			if (rmRecord.getElapsedTime() > elapsedTimeBorder) {
 				this.numberOfCases++;
@@ -150,5 +158,9 @@ public class RmProcessor {
 			result = new ArrayList<RMNode>();
 		}
 		return result;
+	}
+
+	public Set<String> getUseCases() {
+		return useCaseRootList.keySet();
 	}
 }
