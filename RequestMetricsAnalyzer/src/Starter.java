@@ -9,16 +9,12 @@ public class Starter {
 	private static boolean debug = false;
 
 	public static void main(String[] args) {
-		boolean parametererror = true;
-		String inputFileName = null;
+		boolean parametererror = false;
 		final RmProcessor processor = new RmProcessor();
 		
 		if (args.length > 0) {
 			for (String param : args) {
-				if (param.startsWith("-FILE=")) {
-					inputFileName = param.substring(6);
-					parametererror = false;
-				} else if (param.startsWith("-TIMEBORDER=")) {
+				if (param.startsWith("-TIMEBORDER=")) {
 					try {
 						processor.setElapsedTimeBorder(new Long(param.substring(12)));
 					} catch (Exception e) {
@@ -33,9 +29,6 @@ public class Starter {
 		}
 		
 		if(!parametererror) {
-			// we can parse the file now
-			processor.processInputFile(inputFileName);		
-
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
 					RequestMetricsGui.createAndShowGUI(processor);
@@ -49,9 +42,6 @@ public class Starter {
 			System.err.println("|-----------------------------------------------------------------------------------------|");
 			System.err.println("| Parameter  | Mandatory | Default | Description                                          |");
 			System.err.println("|------------|-----------|---------|------------------------------------------------------|");
-			System.err.println("| FILE       | Yes       | n.a.    | path to file with request metrics entries            |");
-			System.err.println("|            |           |         | (must be grepped with following command              |");
-			System.err.println("|            |           |         | 'grep \"PMRM0003I\" SystemOut*.log > RMrecords.txt')   |");
 			System.err.println("| TIMEBORDER | No        | null	   | time in milliseconds for the requests that should be |");
 			System.err.println("|            |           |         | analyzed (null = all requests are analyzed)          |");
 			System.err.println("| DEBUG	     | No        | off     | print out debug information                          |");
