@@ -1,6 +1,7 @@
 package de.ibm.issw.requestmetrics;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
@@ -26,14 +27,16 @@ public class RmProcessor {
 	
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
-	private Long numberOfCases;
 	
 	public void processInputFile(String inputFileName) {
+		processInputFile(new File(inputFileName));
+	}
+		
+	public void processInputFile (File file) {
 		this.processedLines = 0l;
-		this.numberOfCases = 0l;
 		
 		try {
-			FileReader inputFileReader = new FileReader(inputFileName);
+			FileReader inputFileReader = new FileReader(file);
 			BufferedReader inputStream = new BufferedReader(inputFileReader);
 			String line = null;
 			while ((line = inputStream.readLine()) != null) {
@@ -47,7 +50,7 @@ public class RmProcessor {
 
 			inputStream.close();
 			LOG.info("Processed " + this.processedLines + " lines of PMRM0003I type.");
-			LOG.info("Number of testCase tables found: " + this.numberOfCases);
+			LOG.info("Number of testCase tables found: " + getUseCases().size());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -115,7 +118,6 @@ public class RmProcessor {
 		if (rmRecord.getCurrentCmp().getReqid().equals(rmRecord.getParentCmp().getReqid())) {
 			// filter by time
 			if (rmRecord.getElapsedTime() > elapsedTimeBorder) {
-				this.numberOfCases++;
 				// we mark the record as root record and put it in the list of root-records
 				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
 				
@@ -147,10 +149,6 @@ public class RmProcessor {
 		return processedLines;
 	}
 
-	public Long getNumberOfCases() {
-		return numberOfCases;
-	}
-
 	public Map<String, RMNode> getUseCaseRootList() {
 		return useCaseRootList;
 	}
@@ -165,5 +163,11 @@ public class RmProcessor {
 
 	public List<RmRootCase> getUseCases() {
 		return this.rootCases;
+	}
+
+	public void reset() {
+		this.useCaseRootList.clear();
+		this.rootCases.clear();
+		this.parentNodesMap.clear();
 	}
 }
