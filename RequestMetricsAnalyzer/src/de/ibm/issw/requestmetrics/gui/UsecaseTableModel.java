@@ -9,8 +9,9 @@ import de.ibm.issw.requestmetrics.RmRootCase;
 
 @SuppressWarnings("serial")
 public class UsecaseTableModel extends AbstractTableModel {
+	private static final String[] columnNames = {"Timestamp", "Elapsed Time", "Type", "Request ID", "Details"};
+
 	private List<RmRootCase> useCases;
-	private String[] columnNames = {"Timestamp", "Elapsed Time", "Type", "Request ID", "Details"};
 		
 	public UsecaseTableModel(List<RmRootCase> useCases) {
 		this.useCases = useCases;

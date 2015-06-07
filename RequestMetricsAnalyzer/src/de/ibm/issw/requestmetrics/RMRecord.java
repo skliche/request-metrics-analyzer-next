@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class RMRecord {
-	private static SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private String logSource;
 	private Date logTimeStamp;
