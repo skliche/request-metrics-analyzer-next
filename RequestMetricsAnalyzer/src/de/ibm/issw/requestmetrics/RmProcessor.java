@@ -112,7 +112,7 @@ public class RmProcessor {
 		RMNode rmNode = new RMNode(rmRecord);
 
 		// if the current record-id is the same as the parent-id, then we have a root-record
-		if (rmRecord.getCurrentCmp().toString().equals(rmRecord.getParentCmp().toString())) {
+		if (rmRecord.getCurrentCmp().getReqid().equals(rmRecord.getParentCmp().getReqid())) {
 			// filter by time
 			if (rmRecord.getElapsedTime() > elapsedTimeBorder) {
 				this.numberOfCases++;
