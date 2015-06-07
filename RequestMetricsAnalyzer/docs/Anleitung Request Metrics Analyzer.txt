@@ -40,9 +40,6 @@
 	|-----------------------------------------------------------------------------------------|
 	| Parameter  | Mandatory | Default | Description                                          |
 	|------------|-----------|---------|------------------------------------------------------|
-	| FILE       | Yes       | n.a.    | path to file with request metrics entries            |
-	|            |           |         | (must be grepped with following command              |
-	|            |           |         | 'grep "PMRM0003I" SystemOut*.log > RMrecords.txt')   |
 	| TIMEBORDER | No        | null    | time in milliseconds for the requests that should be |
 	|            |           |         | analyzed (null = all requests are analyzed)          |
 	| DEBUG      | No        | off     | print out debug information                          |
