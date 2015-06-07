@@ -3,7 +3,7 @@ package de.ibm.issw.requestmetrics;
 import java.text.SimpleDateFormat;
 
 public class RmRootCase {
-	private static SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	private RMRecord record;
 	
 	public RmRootCase(RMRecord rmRecord) {
