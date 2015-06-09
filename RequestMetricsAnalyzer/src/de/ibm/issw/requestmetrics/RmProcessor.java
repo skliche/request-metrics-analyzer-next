@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -17,8 +18,9 @@ import java.util.regex.Pattern;
 
 public class RmProcessor {
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
-	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+) type=(\\w+) detail=(.*) elapsed=(\\w+)";	
+	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN = Pattern.compile(REGEX);
 
 	private Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
@@ -91,9 +93,9 @@ public class RmProcessor {
 			
 			Date recordDate = null; //[5/28/15 11:10:39:507 EDT]
 			try {
-				SimpleDateFormat sdf = new SimpleDateFormat("M/d/y h:m:s:S z");
 				recordDate = sdf.parse(timestamp);
 			} catch (ParseException e) {
+				e.printStackTrace();
 				LOG.severe("could not parse the log timestamp: " + timestamp);
 				
 			}
@@ -117,7 +119,7 @@ public class RmProcessor {
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.getCurrentCmp().getReqid().equals(rmRecord.getParentCmp().getReqid())) {
 			// filter by time
-			if (rmRecord.getElapsedTime() > elapsedTimeBorder) {
+			if (rmRecord.getElapsedTime() >= elapsedTimeBorder) {
 				// we mark the record as root record and put it in the list of root-records
 				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
 				
