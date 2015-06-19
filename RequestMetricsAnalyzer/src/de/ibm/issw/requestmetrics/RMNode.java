@@ -5,7 +5,7 @@ import java.util.List;
 
 public class RMNode {
 	public RMRecord rmData;
-	public List<RMNode> children = new ArrayList<RMNode>();
+	public final List<RMNode> children = new ArrayList<RMNode>();
 
 	public RMNode() {
 	}
@@ -16,10 +16,6 @@ public class RMNode {
 
 	public List<RMNode> getChildren() {
 		return this.children;
-	}
-
-	public int getNumberOfChildren() {
-		return this.children.size();
 	}
 
 	public void addChild(RMNode child) {

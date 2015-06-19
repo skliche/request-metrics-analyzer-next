@@ -23,9 +23,9 @@ public class RmProcessor {
 	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN = Pattern.compile(REGEX);
 
-	private Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
-	private Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
-	private List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
+	private final Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
+	private final Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
+	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
@@ -38,8 +38,8 @@ public class RmProcessor {
 		this.processedLines = 0l;
 		
 		try {
-			FileReader inputFileReader = new FileReader(file);
-			BufferedReader inputStream = new BufferedReader(inputFileReader);
+			final FileReader inputFileReader = new FileReader(file);
+			final BufferedReader inputStream = new BufferedReader(inputFileReader);
 			String line = null;
 			while ((line = inputStream.readLine()) != null) {
 				RMRecord record = processSingleLine(line);
@@ -100,8 +100,8 @@ public class RmProcessor {
 				
 			}
 			
-			RMComponent currentCmp = new RMComponent(currentVersion, currentIp, currentTimestamp, currentPid, currentRequestId, currentEvent);
-			RMComponent parentCmp = new RMComponent(parentVersion, parentIp, parentTimestamp, parentPid, parentRequestId, parentEvent);
+			final RMComponent currentCmp = new RMComponent(currentVersion, currentIp, currentTimestamp, currentPid, currentRequestId, currentEvent);
+			final RMComponent parentCmp = new RMComponent(parentVersion, parentIp, parentTimestamp, parentPid, parentRequestId, parentEvent);
 			
 			// create the record from the log line
 			record = new RMRecord(logFileName, recordDate, threadId, 
