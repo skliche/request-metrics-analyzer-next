@@ -6,21 +6,18 @@ import java.util.Date;
 public class RMRecord {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
-	private String logSource;
-	private Date logTimeStamp;
-	private String rmRecId;
-	private String threadId;
-	private RMComponent currentCmp;
-	private RMComponent parentCmp;
-	private String typeCmp;
-	private String detailCmp;
-	private Long elapsedTime;
+	private final String logSource;
+	private final Date logTimeStamp;
+	private final String rmRecId;
+	private final String threadId;
+	private final RMComponent currentCmp;
+	private final RMComponent parentCmp;
+	private final String typeCmp;
+	private final String detailCmp;
+	private final long elapsedTime;
 	
-	public RMRecord() {
-	}
-
 	public RMRecord(String logSource, Date logTimestamp, String threadId, RMComponent currentCmp, RMComponent parentCmp,
-			String typeCmp, String detailCmp, Long elapsedTime) {
+			String typeCmp, String detailCmp, long elapsedTime) {
 		this.logSource = logSource;
 		this.logTimeStamp = logTimestamp;
 		this.threadId = threadId;
@@ -44,16 +41,8 @@ public class RMRecord {
 		return this.detailCmp;
 	}
 
-	public void setDetailCmp(String detailCmp) {
-		this.detailCmp = detailCmp;
-	}
-
-	public Long getElapsedTime() {
+	public long getElapsedTime() {
 		return this.elapsedTime;
-	}
-
-	public void setElapsedTime(Long elapsedTime) {
-		this.elapsedTime = elapsedTime;
 	}
 
 	public RMComponent getParentCmp() {
@@ -64,32 +53,18 @@ public class RMRecord {
 		return this.typeCmp;
 	}
 
-	public void setTypeCmp(String typeCmp) {
-		this.typeCmp = typeCmp;
-	}
-
 	public String getLogSource() {
 		return logSource;
-	}
-
-	public void setLogSource(String logSource) {
-		this.logSource = logSource;
-	}
-
-	public String toString() {
-		String recordRM = this.logTimeStamp + "|"
-				+ this.elapsedTime + "|" + this.threadId + "|" + this.parentCmp
-				+ "|" + this.currentCmp + "|" + this.typeCmp + "|"
-				+ this.detailCmp + "|";
-		return recordRM;
 	}
 
 	public String getRmRecId() {
 		return this.rmRecId;
 	}
 
-	public static String generateRmRecId(String threadId, RMComponent currentCmp) {
-		return threadId + "," + currentCmp;
+	private String generateRmRecId(String threadId, RMComponent currentCmp) {
+		StringBuffer sb = new StringBuffer()
+			.append(threadId).append(",").append(currentCmp);
+		return  sb.toString();
 	}
 
 	public Date getLogTimeStamp() {
@@ -97,9 +72,27 @@ public class RMRecord {
 	}
 
 	public String determineRMRecDesc() {
-		
-		return getElapsedTime() + "ms | " + sdf.format(logTimeStamp) 
-				+ " | " + getThreadId() + " | " + getTypeCmp() + " | "
-				+ getDetailCmp();
+		StringBuffer sb = new StringBuffer()
+			.append(getElapsedTime()).append("ms | ")
+			.append(sdf.format(logTimeStamp)).append(" | ")
+			.append(getThreadId()).append(" | ")
+			.append(getTypeCmp()).append(" | ")
+			.append(getDetailCmp());
+		return sb.toString();
+	}
+
+	public String toString() {
+		StringBuffer sb = new StringBuffer()
+			.append(this.logTimeStamp).append("|")
+			.append(this.elapsedTime).append("|") 
+			.append(this.threadId).append("|")
+			.append(this.parentCmp).append("|") 
+			.append(this.currentCmp).append("|") 
+			.append(this.typeCmp).append("|")
+			.append(this.detailCmp).append("|");
+		return sb.toString();
+	}
+	public boolean isRootCase() {
+		return currentCmp.getReqid() == parentCmp.getReqid();
 	}
 }

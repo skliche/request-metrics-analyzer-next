@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import de.ibm.issw.requestmetrics.RMNode;
 import de.ibm.issw.requestmetrics.RMRecord;
 import de.ibm.issw.requestmetrics.RmRootCase;
 
@@ -34,20 +35,21 @@ public class UsecaseTableModel extends AbstractTableModel {
 	
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		RMRecord record = useCases.get(0).getRmNode();
-		
+		RMNode node = useCases.get(0).getRmNode();
+		RMRecord record = node.getData();
 		switch (columnIndex) {
 			case 0: return record.getLogTimeStamp().getClass();
-			case 1:	return record.getElapsedTime().getClass();
+			case 1:	return Long.class;
 			case 2: return record.getTypeCmp().getClass();
-			case 3: return record.getCurrentCmp().getReqid().getClass();
+			case 3: return Long.class;
 			default: return record.getDetailCmp().getClass();
 		}
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		RMRecord record = useCases.get(rowIndex).getRmNode();
+		RMNode node = useCases.get(rowIndex).getRmNode();
+		RMRecord record = node.getData();
 		
 		switch (columnIndex) {
 			case 0: return record.getLogTimeStamp();

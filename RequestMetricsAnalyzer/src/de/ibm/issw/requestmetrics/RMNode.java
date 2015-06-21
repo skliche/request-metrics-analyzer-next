@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RMNode {
-	public RMRecord rmData;
+	public final RMRecord rmData;
 	public final List<RMNode> children = new ArrayList<RMNode>();
-
-	public RMNode() {
-	}
 
 	public RMNode(RMRecord rmData) {
 		this.rmData = rmData;
@@ -24,24 +21,5 @@ public class RMNode {
 
 	public RMRecord getData() {
 		return this.rmData;
-	}
-
-	public void setData(RMRecord rmData) {
-		this.rmData = rmData;
-	}
-
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{").append(getData().toString()).append(",[");
-		int i = 0;
-		for (RMNode e : getChildren()) {
-			if (i > 0) {
-				sb.append(",");
-			}
-			sb.append(e.getData().toString());
-			i++;
-		}
-		sb.append("]").append("}");
-		return sb.toString();
 	}
 }
