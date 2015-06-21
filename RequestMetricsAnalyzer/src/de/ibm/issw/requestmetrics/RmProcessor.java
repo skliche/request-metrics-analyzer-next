@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ibm.issw.requestmetrics.util.StringPool;
+
 public class RmProcessor {
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
@@ -23,8 +26,7 @@ public class RmProcessor {
 	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN = Pattern.compile(REGEX);
 
-	private final Map<String, List<RMNode>> parentNodesMap = new HashMap<String, List<RMNode>>();
-	private final Map<String, RMNode> useCaseRootList = new HashMap<String, RMNode>();
+	private final Map<Long, List<RMNode>> parentNodes = new HashMap<Long, List<RMNode>>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	
 	private Long elapsedTimeBorder = 0l;
@@ -52,12 +54,12 @@ public class RmProcessor {
 
 			inputStream.close();
 			LOG.info("Processed " + this.processedLines + " lines of PMRM0003I type.");
-			LOG.info("Number of testCase tables found: " + getUseCases().size());
+			LOG.info("Number of testCase tables found: " + getRootCases().size());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
+	
 	/**
 	 * processes a single line and creates the java record representation out of it
 	 * @param line the line
@@ -67,29 +69,29 @@ public class RmProcessor {
 	private RMRecord processSingleLine(String line) {
 		RMRecord record = null;
 		
-		// parse the log using a REGEX
+		// parse the log using a REGEX, Strings are processed by a string pool
 		Matcher logMatcher = PATTERN.matcher(line);
 		if(logMatcher.matches()) {
-			String logFileName = logMatcher.group(1);
-			String timestamp = logMatcher.group(2);
-			String threadId = logMatcher.group(3);
+			final String logFileName = StringPool.intern(logMatcher.group(1));
+			final String timestamp = StringPool.intern(logMatcher.group(2));
+			final String threadId = StringPool.intern(logMatcher.group(3));
 			
-			String parentVersion = logMatcher.group(4);
-			String parentIp = logMatcher.group(5);
-			String parentTimestamp = logMatcher.group(6);
-			String parentPid = logMatcher.group(7);
-			String parentRequestId = logMatcher.group(8);
-			String parentEvent = logMatcher.group(9);
+			final Integer parentVersion = Integer.parseInt(logMatcher.group(4));
+			final String parentIp = StringPool.intern(logMatcher.group(5));
+			final Long parentTimestamp = Long.parseLong(logMatcher.group(6));
+			final Long parentPid = Long.parseLong(logMatcher.group(7));
+			final Long parentRequestId = Long.parseLong(logMatcher.group(8));
+			final String parentEvent = StringPool.intern(logMatcher.group(9));
 			
-			String currentVersion = logMatcher.group(10);
-			String currentIp = logMatcher.group(11);
-			String currentTimestamp = logMatcher.group(12);
-			String currentPid = logMatcher.group(13);
-			String currentRequestId = logMatcher.group(14);
-			String currentEvent = logMatcher.group(15);
-			String type = logMatcher.group(16);
-			String detail = logMatcher.group(17);
-			Long currentElapsed = Long.parseLong(logMatcher.group(18));
+			final Integer currentVersion = Integer.parseInt(logMatcher.group(10));
+			final String currentIp = StringPool.intern(logMatcher.group(11));
+			final Long currentTimestamp = Long.parseLong(logMatcher.group(12));
+			final Long currentPid = Long.parseLong(logMatcher.group(13));
+			final Long currentRequestId = Long.parseLong(logMatcher.group(14));
+			final String currentEvent = StringPool.intern(logMatcher.group(15));
+			final String type = StringPool.intern(logMatcher.group(16));
+			final String detail = StringPool.intern(logMatcher.group(17));
+			final Long currentElapsed = Long.parseLong(logMatcher.group(18));
 			
 			Date recordDate = null; //[5/28/15 11:10:39:507 EDT]
 			try {
@@ -117,30 +119,29 @@ public class RmProcessor {
 		RMNode rmNode = new RMNode(rmRecord);
 
 		// if the current record-id is the same as the parent-id, then we have a root-record
-		if (rmRecord.getCurrentCmp().getReqid().equals(rmRecord.getParentCmp().getReqid())) {
+		if (rmRecord.isRootCase()) {
 			// filter by time
 			if (rmRecord.getElapsedTime() >= elapsedTimeBorder) {
 				// we mark the record as root record and put it in the list of root-records
-				useCaseRootList.put(rmRecord.getRmRecId(), rmNode);
-				
-				RmRootCase rootCase = new RmRootCase(rmRecord);
+				RmRootCase rootCase = new RmRootCase(rmNode);
 				rootCases.add(rootCase);
 			}
 		// otherwise the the current record is a child-record
 		} else {
-			List<RMNode> parentContaineesList = parentNodesMap.get(RMRecord.generateRmRecId(rmRecord.getThreadId(), rmRecord.getParentCmp()));
-			if (parentContaineesList != null) {
-				parentContaineesList.add(rmNode);
+			final Long parentNodeId = rmRecord.getParentCmp().getReqid();
+			List<RMNode> childNodes = parentNodes.get(parentNodeId);
+			if (childNodes != null) {
+				childNodes.add(rmNode);
 			} else {
-				parentContaineesList = new ArrayList<RMNode>();
-				parentNodesMap.put(RMRecord.generateRmRecId(rmRecord.getThreadId(), rmRecord.getParentCmp()), parentContaineesList);
-				parentContaineesList.add(rmNode);
+				childNodes = new ArrayList<RMNode>();
+				childNodes.add(rmNode);
+				parentNodes.put(parentNodeId, childNodes);
 			}
 		}
 	}
 
-	public Map<String, List<RMNode>> getParentNodesMap() {
-		return this.parentNodesMap;
+	public Map<Long, List<RMNode>> getParentNodesMap() {
+		return this.parentNodes;
 	}
 
 	public void setElapsedTimeBorder(Long elapsedTimeBorder) {
@@ -148,28 +149,23 @@ public class RmProcessor {
 	}
 
 	public Long getProcessedLines() {
-		return processedLines;
+		return this.processedLines;
 	}
 
-	public Map<String, RMNode> getUseCaseRootList() {
-		return useCaseRootList;
-	}
-
-	public List<RMNode> getChildrenByParentNodeId(String rmRecId) {
-		List<RMNode> result = parentNodesMap.get(rmRecId);
-		if(result == null) {
-			result = new ArrayList<RMNode>();
-		}
+	@SuppressWarnings("unchecked")
+	public List<RMNode> getChildrenByParentNodeId(Long parentId) {
+		List<RMNode> result = this.parentNodes.get(parentId);
+		if(result == null)
+			result = Collections.EMPTY_LIST;
 		return result;
 	}
 
-	public List<RmRootCase> getUseCases() {
+	public List<RmRootCase> getRootCases() {
 		return this.rootCases;
 	}
 
 	public void reset() {
-		this.useCaseRootList.clear();
 		this.rootCases.clear();
-		this.parentNodesMap.clear();
+		this.parentNodes.clear();
 	}
 }
