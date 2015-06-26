@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -30,6 +31,7 @@ import de.ibm.issw.requestmetrics.RmRootCase;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui extends JPanel{
+	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
@@ -91,7 +93,7 @@ public class RequestMetricsGui extends JPanel{
 				processor.reset();
 				processor.processInputFile(fd.getFiles()[0]);
 				// remove the old model
-				table.setModel(new UsecaseTableModel(processor.getUseCases()));
+				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
 				table.getColumnModel().getColumn(0).setMinWidth(215); 
 				table.getColumnModel().getColumn(0).setMaxWidth(515); 
@@ -127,15 +129,22 @@ public class RequestMetricsGui extends JPanel{
 		// add selection listener to select the use cases
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
-				int row = table.getSelectedRow();
-				if(row != -1) { //if no row is selected row = -1 (and we do nothing)
-					RmRootCase useCase = processor.getUseCases().get(table.convertRowIndexToModel(row));
-					RMNode rmRecRoot = processor.getUseCaseRootList().get(useCase.getRmNode().getRmRecId());
-					JPanel jpanel = new UsecasePanel(rmRecRoot, processor);
-					treeInternalFrame.setVisible(false);
-					treeInternalFrame.getContentPane().removeAll();
-					treeInternalFrame.add(jpanel, "Center");
-					treeInternalFrame.setVisible(true);
+				
+				// check if we are in an event sequence and only process the last one
+				if(!event.getValueIsAdjusting() && !table.getSelectionModel().isSelectionEmpty()) {
+					int row = table.getSelectedRow();
+					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
+						RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
+						
+						LOG.info("user selected use case " + useCase.getRmNode().toString());
+						
+						RMNode rmRecRoot = useCase.getRmNode();
+						JPanel jpanel = new UsecasePanel(rmRecRoot, processor);
+						treeInternalFrame.setVisible(false);
+						treeInternalFrame.getContentPane().removeAll();
+						treeInternalFrame.add(jpanel, "Center");
+						treeInternalFrame.setVisible(true);
+					}
 				}
 			} 
 		});
