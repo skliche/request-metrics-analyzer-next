@@ -8,7 +8,6 @@ public class RMRecord {
 	
 	private final String logSource;
 	private final Date logTimeStamp;
-	private final String rmRecId;
 	private final String threadId;
 	private final RMComponent currentCmp;
 	private final RMComponent parentCmp;
@@ -26,7 +25,6 @@ public class RMRecord {
 		this.typeCmp = typeCmp;
 		this.detailCmp = detailCmp;
 		this.elapsedTime = elapsedTime;
-		this.rmRecId = generateRmRecId(threadId, currentCmp);
 	}
 
 	public String getThreadId() {
@@ -57,16 +55,6 @@ public class RMRecord {
 		return logSource;
 	}
 
-	public String getRmRecId() {
-		return this.rmRecId;
-	}
-
-	private String generateRmRecId(String threadId, RMComponent currentCmp) {
-		StringBuffer sb = new StringBuffer()
-			.append(threadId).append(",").append(currentCmp);
-		return  sb.toString();
-	}
-
 	public Date getLogTimeStamp() {
 		return logTimeStamp;
 	}
@@ -78,6 +66,14 @@ public class RMRecord {
 			.append(getThreadId()).append(" | ")
 			.append(getTypeCmp()).append(" | ")
 			.append(getDetailCmp());
+		
+		if(parentCmp.getReqid() == currentCmp.getReqid()) {
+			sb.append(" | reqid=").append(parentCmp.getReqid())
+			.append(" (root event)");
+		} else {
+			sb.append(" | parent=").append(parentCmp.getReqid())
+			.append(" | current=").append(currentCmp.getReqid());
+		}
 		return sb.toString();
 	}
 
