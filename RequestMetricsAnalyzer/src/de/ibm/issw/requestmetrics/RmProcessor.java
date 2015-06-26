@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,7 +47,7 @@ public class RmProcessor {
 			final BufferedReader inputStream = new BufferedReader(inputFileReader);
 			String line = null;
 			while ((line = inputStream.readLine()) != null) {
-				RMRecord record = processSingleLine(line);
+				final RMRecord record = processSingleLine(line);
 				if(record != null) {
 					// process the record 
 					addRmRecordToDataset(record);
@@ -70,7 +73,7 @@ public class RmProcessor {
 		RMRecord record = null;
 		
 		// parse the log using a REGEX, Strings are processed by a string pool
-		Matcher logMatcher = PATTERN.matcher(line);
+		final Matcher logMatcher = PATTERN.matcher(line);
 		if(logMatcher.matches()) {
 			final String logFileName = StringPool.intern(logMatcher.group(1));
 			final String timestamp = StringPool.intern(logMatcher.group(2));
@@ -116,14 +119,14 @@ public class RmProcessor {
 
 	private void addRmRecordToDataset(RMRecord rmRecord) {
 		// add the record to a node - we always create a node
-		RMNode rmNode = new RMNode(rmRecord);
+		final RMNode rmNode = new RMNode(rmRecord);
 
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.isRootCase()) {
 			// filter by time
 			if (rmRecord.getElapsedTime() >= elapsedTimeBorder) {
 				// we mark the record as root record and put it in the list of root-records
-				RmRootCase rootCase = new RmRootCase(rmNode);
+				final RmRootCase rootCase = new RmRootCase(rmNode);
 				rootCases.add(rootCase);
 			}
 		// otherwise the the current record is a child-record
@@ -140,32 +143,81 @@ public class RmProcessor {
 		}
 	}
 
-	public Map<Long, List<RMNode>> getParentNodesMap() {
-		return this.parentNodes;
-	}
-
 	public void setElapsedTimeBorder(Long elapsedTimeBorder) {
 		this.elapsedTimeBorder = elapsedTimeBorder;
 	}
 
 	public Long getProcessedLines() {
-		return this.processedLines;
+		return processedLines;
 	}
 
+	/**
+	 * Find all nodes by the rm record id. The method looks in the parent node index.
+	 *  
+	 * @param nodeId the id of the rm record
+	 * @return a list of RMNodes that have a reference to the supplied node id
+	 * 
+	 */
 	@SuppressWarnings("unchecked")
-	public List<RMNode> getChildrenByParentNodeId(Long parentId) {
-		List<RMNode> result = this.parentNodes.get(parentId);
-		if(result == null)
+	public List<RMNode> findByRmRecId(long nodeId) {
+		if(LOG.isLoggable(Level.INFO)) {
+			LOG.log(Level.INFO, "findByNodeId with record id " + nodeId);
+		}
+		List<RMNode> result = parentNodes.get(nodeId);
+		if(result == null) {
 			result = Collections.EMPTY_LIST;
+			LOG.warning("findByRmRecId was called with an invalid node id");
+		}
+		return result;
+	}
+	
+	/**
+	 * Find all events that have no root event.
+	 * @return a list of RM node that are not a root event and not referenced by a root event
+	 * 
+	 */
+	public List<RMNode> findUnreferencedEvents() {
+		LOG.info("looking for dirty events...");
+		List<RMNode> result = new ArrayList<RMNode>();
+
+		final Map<Long, Boolean> parentNodeHash = new HashMap<Long, Boolean>();
+		final Map<Long, Boolean> currentNodeHash = new HashMap<Long, Boolean>();
+		
+		// build up a hash of all parent nodes (use the use cases for that)
+		for (RmRootCase rootCase : this.rootCases) {
+			parentNodeHash.put(rootCase.getRmNode().getData().getParentCmp().getReqid(), true);
+		}
+		
+		// build up a hash of all current nodes
+		for (Entry<Long, List<RMNode>> item : this.parentNodes.entrySet()) {
+			List<RMNode> nodes = item.getValue();
+			for (RMNode node : nodes) {
+				currentNodeHash.put(node.getData().getCurrentCmp().getReqid(), true);
+			}
+		}
+		
+		// now do some set theory and by that filter
+		// TODO: we are currently destroying the parentNodeKeys which is shit
+		Set<Long> parentNodeKeys = parentNodes.keySet();
+		parentNodeKeys.removeAll(parentNodeHash.keySet());
+		parentNodeKeys.removeAll(currentNodeHash.keySet());
+		
+		for (Long key : parentNodeKeys) {
+			rootCases.add(new DummyRmRootCase(key));
+		}
+		LOG.info("found " + parentNodeKeys.size() + " dirty events: " + parentNodeKeys);
 		return result;
 	}
 
 	public List<RmRootCase> getRootCases() {
-		return this.rootCases;
+		return rootCases;
 	}
 
+	/**
+	 * resets the processor in order to be able to process a new file
+	 */
 	public void reset() {
-		this.rootCases.clear();
-		this.parentNodes.clear();
+		rootCases.clear();
+		parentNodes.clear();
 	}
 }
