@@ -30,34 +30,18 @@ public class UsecasePanel extends JPanel {
 	}
 	
 	private void getRecursive(SortableNode node, RMNode rmNode, RmProcessor processor) {
-		String rmRecId = rmNode.getData().getRmRecId();
-		List<RMNode> rmRecChildren = processor.getChildrenByParentNodeId(rmRecId);
-
-		for (RMNode childRMRecNode : rmRecChildren) {
-			SortableNode childElement = new SortableNode(childRMRecNode);
+		final Long rmRecId = rmNode.getData().getCurrentCmp().getReqid();
+		final List<RMNode> children = processor.findByRmRecId(rmRecId);
+		
+		for (final RMNode childRMRecNode : children) {
+			final SortableNode childElement = new SortableNode(childRMRecNode);
 			node.add(childElement);
 			getRecursive(childElement, childRMRecNode, processor);
 		}
 	}
-	class SortableNode extends DefaultMutableTreeNode implements Comparable<SortableNode> {
+	class SortableNode extends DefaultMutableTreeNode {
 		public SortableNode(RMNode childRMRecNode) {
 			super(childRMRecNode);
-		}
-
-//		public void insert(MutableTreeNode newChild, int childIndex) {
-//			super.insert(newChild, childIndex);
-//			not sure if this is required so we comment it out
-//			Collections.sort(this.children);
-//		}
-
-		public int compareTo(SortableNode obj) {
-			RMNode currentNode = (RMNode) this.getUserObject();
-			RMNode compareNode = (RMNode) obj.getUserObject();
-			
-			long timestamp = currentNode.getData().getLogTimeStamp().getTime();
-			long compareTimestamp = compareNode.getData().getLogTimeStamp().getTime();
-			long diff = timestamp - compareTimestamp;
-			return Integer.parseInt(new Long(diff).toString());
 		}
 		
 		@Override
