@@ -10,8 +10,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import de.ibm.issw.requestmetrics.RMNode;
-import de.ibm.issw.requestmetrics.RmProcessor;
+import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.model.RMNode;
 
 @SuppressWarnings("serial")
 public class UsecasePanel extends JPanel {

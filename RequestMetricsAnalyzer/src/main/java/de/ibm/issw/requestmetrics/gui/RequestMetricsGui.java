@@ -25,9 +25,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-import de.ibm.issw.requestmetrics.RMNode;
-import de.ibm.issw.requestmetrics.RmProcessor;
-import de.ibm.issw.requestmetrics.RmRootCase;
+import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.model.RMNode;
+import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui extends JPanel{

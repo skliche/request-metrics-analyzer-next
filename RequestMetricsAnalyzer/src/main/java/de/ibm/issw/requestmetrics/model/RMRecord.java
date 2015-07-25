@@ -1,4 +1,4 @@
-package de.ibm.issw.requestmetrics;
+package de.ibm.issw.requestmetrics.model;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

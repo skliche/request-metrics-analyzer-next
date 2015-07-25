@@ -4,9 +4,9 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import de.ibm.issw.requestmetrics.RMNode;
-import de.ibm.issw.requestmetrics.RMRecord;
-import de.ibm.issw.requestmetrics.RmRootCase;
+import de.ibm.issw.requestmetrics.model.RMNode;
+import de.ibm.issw.requestmetrics.model.RMRecord;
+import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class UsecaseTableModel extends AbstractTableModel {

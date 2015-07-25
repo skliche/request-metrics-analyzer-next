@@ -1,4 +1,4 @@
-package de.ibm.issw.requestmetrics;
+package de.ibm.issw.requestmetrics.model;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package de.ibm.issw.requestmetrics;
+package de.ibm.issw.requestmetrics.engine;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,6 +20,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ibm.issw.requestmetrics.model.DummyRmRootCase;
+import de.ibm.issw.requestmetrics.model.RMComponent;
+import de.ibm.issw.requestmetrics.model.RMNode;
+import de.ibm.issw.requestmetrics.model.RMRecord;
+import de.ibm.issw.requestmetrics.model.RmRootCase;
 import de.ibm.issw.requestmetrics.util.StringPool;
 
 public class RmProcessor {

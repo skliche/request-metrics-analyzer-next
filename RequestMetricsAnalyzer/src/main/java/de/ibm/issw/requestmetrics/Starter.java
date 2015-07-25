@@ -1,7 +1,8 @@
+package de.ibm.issw.requestmetrics;
 
 import javax.swing.SwingUtilities;
 
-import de.ibm.issw.requestmetrics.RmProcessor;
+import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.gui.RequestMetricsGui;
 
 public class Starter {

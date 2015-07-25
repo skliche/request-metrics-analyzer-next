@@ -1,4 +1,4 @@
-package de.ibm.issw.requestmetrics;
+package de.ibm.issw.requestmetrics.model;
 
 public class RMComponent {
 	private final int version;
