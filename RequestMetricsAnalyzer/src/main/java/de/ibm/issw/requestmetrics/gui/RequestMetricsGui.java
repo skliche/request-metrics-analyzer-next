@@ -91,7 +91,7 @@ public class RequestMetricsGui extends JPanel{
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
 				processor.reset();
-				processor.processInputFile(fd.getFiles()[0]);
+				processor.processInputFile(fd.getFile());
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
