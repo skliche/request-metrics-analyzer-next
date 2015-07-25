@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -91,7 +92,7 @@ public class RequestMetricsGui extends JPanel{
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
 				processor.reset();
-				processor.processInputFile(fd.getFile());
+				processor.processInputFile(fd.getDirectory() + fd.getFile());
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
