@@ -1,5 +1,4 @@
 
-
 import javax.swing.SwingUtilities;
 
 import de.ibm.issw.requestmetrics.RmProcessor;
