@@ -24,7 +24,7 @@ public class DummyRmRootCase extends RmRootCase {
 	 */
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer()
+		final StringBuffer sb = new StringBuffer()
 				.append("root event not captued - request id ")
 				.append(key);
 		return sb.toString();

@@ -27,7 +27,7 @@ public class RmRootCase {
 	 */
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer()
+		final StringBuffer sb = new StringBuffer()
 				.append(sdf.format(node.getData().getLogTimeStamp()))
 				.append(" | ").append(node.getData().getElapsedTime())
 				.append(" | ").append(node.getData().getTypeCmp())

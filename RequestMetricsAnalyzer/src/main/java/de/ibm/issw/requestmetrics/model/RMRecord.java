@@ -78,7 +78,7 @@ public class RMRecord {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer()
+		final StringBuffer sb = new StringBuffer()
 			.append(this.logTimeStamp).append("|")
 			.append(this.elapsedTime).append("|") 
 			.append(this.threadId).append("|")

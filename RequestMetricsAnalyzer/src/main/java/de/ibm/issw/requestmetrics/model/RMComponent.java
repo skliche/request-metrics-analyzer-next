@@ -38,7 +38,7 @@ public class RMComponent {
 	
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer()
+		final StringBuffer sb = new StringBuffer()
 			.append("ver=").append(version)
 			.append(",ip=").append(ip)
 			.append(",time=").append(timestamp)
