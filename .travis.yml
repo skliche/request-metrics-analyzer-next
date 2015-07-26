@@ -1,6 +1,5 @@
 language: java
 jdk:
-  - oraclejdk6
   - openjdk6
 branches:
   only:
