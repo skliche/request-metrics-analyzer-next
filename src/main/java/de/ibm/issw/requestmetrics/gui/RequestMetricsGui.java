@@ -95,7 +95,7 @@ public class RequestMetricsGui extends JPanel{
 				processor.reset();
 				try {
 					processor.processInputFile(fd.getDirectory() + fd.getFile());
-				} catch (IOException e1) {
+				} catch (Exception e1) {
 					return;
 				} 
 				// remove the old model
