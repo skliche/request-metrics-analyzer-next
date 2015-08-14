@@ -92,9 +92,14 @@ public class RequestMetricsGui extends JPanel{
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
 				processor.reset();
-				processor.processInputFile(fd.getDirectory() + fd.getFile());
+				try {
+					processor.processInputFile(fd.getDirectory() + fd.getFile());
+				} catch (Exception e1) {
+					return;
+				} 
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
+				
 				// the width is currently hard coded and could be gathered from data in future
 				table.getColumnModel().getColumn(0).setMinWidth(215); 
 				table.getColumnModel().getColumn(0).setMaxWidth(515); 
@@ -112,7 +117,8 @@ public class RequestMetricsGui extends JPanel{
 				    }
 				};
 				table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
-
+		
+				
 			}
 		});
 		
