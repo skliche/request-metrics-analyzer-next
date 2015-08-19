@@ -40,6 +40,8 @@
 	|-----------------------------------------------------------------------------------------|
 	| Parameter  | Mandatory | Default | Description                                          |
 	|------------|-----------|---------|------------------------------------------------------|
+	| TIMEBORDER | No        | null    | time in milliseconds for the requests that should be |
+	|            |           |         | analyzed (null = all requests are analyzed)          |
 	| DEBUG      | No        | off     | print out debug information                          |
 	|-----------------------------------------------------------------------------------------|
 
