@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
@@ -30,13 +32,13 @@ import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
-public class RequestMetricsGui extends JPanel{
+public class RequestMetricsGui extends JPanel implements Observer {
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
-	private static RmProcessor processor;
+	private RmProcessor processor;
 	private static JTable table;
 	
 	public Dimension getMinimumSize() {
@@ -47,13 +49,14 @@ public class RequestMetricsGui extends JPanel{
 		return new Dimension(100, 800);
 	}
 	
-	public static void createAndShowGUI(final RmProcessor processor) {
-		RequestMetricsGui.processor = processor;
+	public void createAndShowGUI(final RmProcessor processor) {
+		this.processor = processor;
+		
+		// register the GUI as observer for the events of the processor
+		processor.addObserver(this);
 		
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
-
-		
 
 		JInternalFrame listInternalFrame = new JInternalFrame("Use Cases List", true, false, true, true);
 		listInternalFrame.add(listScrollPane, "Center");
@@ -79,7 +82,7 @@ public class RequestMetricsGui extends JPanel{
 		mainFrame.setVisible(true);
 	}
 
-	private static JMenuBar buildMenubar(JFrame mainFrame) {
+	private JMenuBar buildMenubar(JFrame mainFrame) {
 		JMenuBar menu = new JMenuBar();
 		
 		JMenu fileMenu = new JMenu("File");
@@ -124,7 +127,7 @@ public class RequestMetricsGui extends JPanel{
 		return menu;
 	}
 
-	private static JTable buildRootCaseTable() {
+	private JTable buildRootCaseTable() {
 		final JTable table = new JTable();
 		table.setFillsViewportHeight(true);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -154,5 +157,10 @@ public class RequestMetricsGui extends JPanel{
 		});
 		
 		return table;
+	}
+
+	@Override
+	public void update(Observable o, Object event) {
+		LOG.info(event.getClass().getName());
 	}
 }
