@@ -1,5 +1,14 @@
 package de.ibm.issw.requestmetrics.engine.events;
 
-public class ParsingHasFinishedEvent {
+import java.io.File;
 
+public class ParsingHasFinishedEvent {
+	private File file;
+	public ParsingHasFinishedEvent(File file) {
+		this.file = file;
+	}
+
+	public File getFile() {
+		return file;
+	}
 }

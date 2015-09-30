@@ -42,6 +42,11 @@ public class RmProcessor extends Observable{
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
 	
+	public void processInputFiles(File[] files) {
+		for (File file : files) {
+			processInputFile (file);
+		}
+	}
 	public void processInputFile(String inputFileName) {
 		processInputFile(new File(inputFileName));
 	}
@@ -70,7 +75,7 @@ public class RmProcessor extends Observable{
 		} finally {
 			//notify the observers that we are done
 			setChanged();
-			notifyObservers(new ParsingHasFinishedEvent());
+			notifyObservers(new ParsingHasFinishedEvent(file));
 		}
 	}
 	

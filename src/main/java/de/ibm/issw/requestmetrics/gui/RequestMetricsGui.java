@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Observable;
@@ -28,6 +29,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.engine.events.ParsingHasFinishedEvent;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
@@ -87,6 +89,7 @@ public class RequestMetricsGui extends JPanel implements Observer {
 		
 		JMenu fileMenu = new JMenu("File");
 		final FileDialog fd = new FileDialog(mainFrame, "Load Scenario File", FileDialog.LOAD);
+		fd.setMultipleMode(true);
 		
 		JMenuItem fileLoadScenarioItem = new JMenuItem("Load Scenario");
 		fileLoadScenarioItem.addActionListener(new ActionListener() {
@@ -95,10 +98,10 @@ public class RequestMetricsGui extends JPanel implements Observer {
 				System.out.println(e.getActionCommand());
 				fd.setVisible(true);
 				processor.reset();
-				String filename = fd.getFile();
-				if(filename == null) return;
+				File[] files = fd.getFiles();
+				if(files == null) return;
 				
-				processor.processInputFile(fd.getDirectory() + filename);
+				processor.processInputFiles(files);
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
@@ -161,6 +164,9 @@ public class RequestMetricsGui extends JPanel implements Observer {
 
 	@Override
 	public void update(Observable o, Object event) {
-		LOG.info(event.getClass().getName());
+		if(event instanceof ParsingHasFinishedEvent) {
+			ParsingHasFinishedEvent concreteEvent = (ParsingHasFinishedEvent) event;
+			LOG.info("parsing of file " + concreteEvent.getFile().getName() + " has finished.");
+		}
 	}
 }
