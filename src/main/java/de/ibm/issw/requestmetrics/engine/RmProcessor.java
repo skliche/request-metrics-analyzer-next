@@ -75,7 +75,7 @@ public class RmProcessor extends Observable{
 		} finally {
 			//notify the observers that we are done
 			setChanged();
-			notifyObservers(new ParsingHasFinishedEvent(file));
+			notifyObservers(new ParsingHasFinishedEvent(this, file));
 		}
 	}
 	
