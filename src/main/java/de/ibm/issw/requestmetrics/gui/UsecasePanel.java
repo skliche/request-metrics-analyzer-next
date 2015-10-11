@@ -27,21 +27,21 @@ import de.ibm.issw.requestmetrics.model.RMNode;
 @SuppressWarnings("serial")
 public class UsecasePanel extends JPanel {
 	private static final Logger LOG = Logger.getLogger(UsecasePanel.class.getName());
-	private TreeNode selectedNode;
-	private TreePath pathForLocation;
+	private TreeNode selectedTreeNode;
+	private TreePath currentTreePath;
 	private JTree tree;
 	
 	public UsecasePanel(RMNode useCaseRootNode, RmProcessor processor) {
 		setLayout(new BorderLayout());
 		
-		SortableNode root = new SortableNode(useCaseRootNode);
+		AnalyzerTreeNode root = new AnalyzerTreeNode(useCaseRootNode);
 		getRecursiveWithDeadlockPrevention(useCaseRootNode, processor, root);
 
 		tree = new JTree(root);
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
-		tree.addMouseListener(getMouseListener());
+		tree.addMouseListener(buildMouseListener());
 		tree.setComponentPopupMenu(buildPopupMenu());
 
 		JScrollPane scrollpane = new JScrollPane();
@@ -49,15 +49,15 @@ public class UsecasePanel extends JPanel {
 		add("Center", scrollpane);
 	}
 
-	private MouseListener getMouseListener() {
+	private MouseListener buildMouseListener() {
 	    return new MouseAdapter() {
 	        @Override
 	        public void mousePressed(MouseEvent event) {
-	            pathForLocation = tree.getPathForLocation(event.getPoint().x, event.getPoint().y);
-	            if(pathForLocation != null) {
-	            	selectedNode = (DefaultMutableTreeNode) pathForLocation.getLastPathComponent();
+	            currentTreePath = tree.getPathForLocation(event.getPoint().x, event.getPoint().y);
+	            if(currentTreePath != null) {
+	            	selectedTreeNode = (DefaultMutableTreeNode) currentTreePath.getLastPathComponent();
 	            } else {
-	            	selectedNode = null;
+	            	selectedTreeNode = null;
 	            }
 	            super.mousePressed(event);
 	        }
@@ -95,14 +95,14 @@ public class UsecasePanel extends JPanel {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if(selectedNode != null) {
+				if(selectedTreeNode != null) {
 					long totalTime = 0;
 					long toalZeroTimes = 0;
 					
 					@SuppressWarnings("unchecked")
-					Enumeration<SortableNode> childNodes = selectedNode.children();
+					Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
 					while (childNodes.hasMoreElements()) {
-						UsecasePanel.SortableNode node = childNodes.nextElement();
+						UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
 						long elapsedTime = node.getRmNode().getData().getElapsedTime();
 						totalTime += elapsedTime;
 						if(elapsedTime == 0) {
@@ -128,19 +128,19 @@ public class UsecasePanel extends JPanel {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-		        if (selectedNode != null) {   
-		        	expandAll(tree, pathForLocation, expand, true);
+		        if (selectedTreeNode != null) {   
+		        	expandAll(tree, currentTreePath, expand, true);
 		        }
 			}
 		};
 	}
 
-	private void getRecursiveWithDeadlockPrevention(RMNode useCaseRootNode, RmProcessor processor, SortableNode root) {
+	private void getRecursiveWithDeadlockPrevention(RMNode useCaseRootNode, RmProcessor processor, AnalyzerTreeNode root) {
 		final List<Long> deadlockpreventionList = new ArrayList<Long>();
 		getRecursive(root, useCaseRootNode, processor, deadlockpreventionList);
 	}
 	
-	private void getRecursive(SortableNode node, RMNode rmNode, RmProcessor processor, List<Long> visited) {
+	private void getRecursive(AnalyzerTreeNode node, RMNode rmNode, RmProcessor processor, List<Long> visited) {
 		final Long rmRecId = rmNode.getData().getCurrentCmp().getReqid();
 		final List<RMNode> children = processor.findByRmRecId(rmRecId);
 		
@@ -152,7 +152,7 @@ public class UsecasePanel extends JPanel {
 		visited.add(rmRecId);
 		
 		for (final RMNode childRMRecNode : children) {
-			final SortableNode childElement = new SortableNode(childRMRecNode);
+			final AnalyzerTreeNode childElement = new AnalyzerTreeNode(childRMRecNode);
 			node.add(childElement);
 			getRecursive(childElement, childRMRecNode, processor, visited);
 		}
@@ -163,7 +163,7 @@ public class UsecasePanel extends JPanel {
  
         if (node.getChildCount() >= 0) {
             @SuppressWarnings("unchecked")
-			Enumeration<SortableNode> children = node.children();
+			Enumeration<AnalyzerTreeNode> children = node.children();
             while (children.hasMoreElements()) {
                 TreeNode childNode = children.nextElement();
                 TreePath childPath = path.pathByAddingChild(childNode);
@@ -182,10 +182,17 @@ public class UsecasePanel extends JPanel {
         }
     }
 	
-	class SortableNode extends DefaultMutableTreeNode {
+	/**
+	 * We create our own implementation of the DefaultMutableTreeNode 
+	 * since we need the ability to customize the behaviour 
+	 * 
+	 * @author skliche
+	 *
+	 */
+	class AnalyzerTreeNode extends DefaultMutableTreeNode {
 		private RMNode rmnode;
 		
-		public SortableNode(RMNode rmNode) {
+		public AnalyzerTreeNode(RMNode rmNode) {
 			super(rmNode);
 			this.rmnode = rmNode;
 		}
@@ -196,7 +203,7 @@ public class UsecasePanel extends JPanel {
 		
 		@Override
 		public String toString() {
-			return ((RMNode)getUserObject()).getData().determineRMRecDesc();
+			return rmnode.getData().determineRMRecDesc();
 		}
 	}
 }
