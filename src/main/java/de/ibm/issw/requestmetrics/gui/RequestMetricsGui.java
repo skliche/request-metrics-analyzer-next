@@ -13,6 +13,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
@@ -34,7 +35,7 @@ import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
-public class RequestMetricsGui extends JPanel implements Observer {
+public class RequestMetricsGui extends JDialog implements Observer {
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
@@ -136,20 +137,22 @@ public class RequestMetricsGui extends JPanel implements Observer {
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setAutoCreateRowSorter(true);
 		
+		// reference to this window 
+		final JDialog rootWindow = this;
+		
 		// add selection listener to select the use cases
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
-				
 				// check if we are in an event sequence and only process the last one
 				if(!event.getValueIsAdjusting() && !table.getSelectionModel().isSelectionEmpty()) {
 					int row = table.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
-						RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
+						final RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
 						
 						LOG.info("user selected use case " + useCase.getRmNode().toString());
 						
-						RMNode rmRecRoot = useCase.getRmNode();
-						JPanel jpanel = new UsecasePanel(rmRecRoot, processor);
+						final RMNode rmRecRoot = useCase.getRmNode();
+						final JPanel jpanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
 						treeInternalFrame.add(jpanel, "Center");

@@ -8,9 +8,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.swing.JDialog;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,16 +25,21 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsEntry;
+import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsDialog;
 import de.ibm.issw.requestmetrics.model.RMNode;
 
 @SuppressWarnings("serial")
 public class UsecasePanel extends JPanel {
 	private static final Logger LOG = Logger.getLogger(UsecasePanel.class.getName());
-	private TreeNode selectedTreeNode;
+	private AnalyzerTreeNode selectedTreeNode;
 	private TreePath currentTreePath;
 	private JTree tree;
+	private JDialog rootWindow;
 	
-	public UsecasePanel(RMNode useCaseRootNode, RmProcessor processor) {
+	public UsecasePanel(JDialog rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
+		this.rootWindow = rootWindow;
+		
 		setLayout(new BorderLayout());
 		
 		AnalyzerTreeNode root = new AnalyzerTreeNode(useCaseRootNode);
@@ -55,7 +63,7 @@ public class UsecasePanel extends JPanel {
 	        public void mousePressed(MouseEvent event) {
 	            currentTreePath = tree.getPathForLocation(event.getPoint().x, event.getPoint().y);
 	            if(currentTreePath != null) {
-	            	selectedTreeNode = (DefaultMutableTreeNode) currentTreePath.getLastPathComponent();
+	            	selectedTreeNode = (AnalyzerTreeNode) currentTreePath.getLastPathComponent();
 	            } else {
 	            	selectedTreeNode = null;
 	            }
@@ -72,8 +80,12 @@ public class UsecasePanel extends JPanel {
 	private JPopupMenu buildPopupMenu() {
 	    JPopupMenu menu = new JPopupMenu();
 	    JMenuItem exportItem = new JMenuItem("Calculate time spend in children");
-	    exportItem.addActionListener(getTimeCalculationListener());
+	    exportItem.addActionListener(buildTimeCalculationListener());
 	    menu.add(exportItem);
+	    
+	    JMenuItem statisticsItem = new JMenuItem("Calculate statistics for children");
+	    statisticsItem.addActionListener(buildNodeStatisticsListener());
+	    menu.add(statisticsItem);
 
 	    JMenuItem collapseItem = new JMenuItem("Collapse all children");
 	    collapseItem.addActionListener(buildCollapseListener(false));
@@ -86,12 +98,48 @@ public class UsecasePanel extends JPanel {
 	    return menu;
 	}
 	
+	private ActionListener buildNodeStatisticsListener() {
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(selectedTreeNode != null) {
+					final Map<String, ChildNodeStatisticsEntry> stats = new HashMap<String, ChildNodeStatisticsEntry>();
+					
+					@SuppressWarnings("unchecked")
+					Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
+					while (childNodes.hasMoreElements()) {
+						final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
+						
+						final String detail = node.getRmNode().rmData.getDetailCmp();
+						final long elapsed = node.getRmNode().rmData.getElapsedTime();
+					
+						if(stats.containsKey(detail)) {
+							final ChildNodeStatisticsEntry entry = stats.get(detail);
+							entry.setTotalTime(entry.getTotalTime() + elapsed);
+							entry.setNumberOfExecutions(entry.getNumberOfExecutions() + 1);
+						} else {
+							final ChildNodeStatisticsEntry entry = new ChildNodeStatisticsEntry();
+							entry.setComponent(detail);
+							entry.setTotalTime(elapsed);
+							entry.setNumberOfExecutions(1l);
+							stats.put(detail, entry);
+						}
+					}
+					
+					final List<ChildNodeStatisticsEntry> entries = new ArrayList<ChildNodeStatisticsEntry>(stats.values());
+					final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, "Statistics for children of " + selectedTreeNode.getRmNode().getData().getDetailCmp(), entries);
+					panel.setVisible(true);
+				}
+			}
+		};
+	}
+
 	/**
 	 * Calculates the time the childnodes took to perform its work and displays 
 	 * the result as messagebox
 	 * @return
 	 */
-	private ActionListener getTimeCalculationListener() {
+	private ActionListener buildTimeCalculationListener() {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -100,9 +148,9 @@ public class UsecasePanel extends JPanel {
 					long toalZeroTimes = 0;
 					
 					@SuppressWarnings("unchecked")
-					Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
+					final Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
 					while (childNodes.hasMoreElements()) {
-						UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
+						final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
 						long elapsedTime = node.getRmNode().getData().getElapsedTime();
 						totalTime += elapsedTime;
 						if(elapsedTime == 0) {
