@@ -44,10 +44,7 @@
 	|            |           |         | analyzed (null = all requests are analyzed)          |
 	| DEBUG      | No        | off     | print out debug information                          |
 	|-----------------------------------------------------------------------------------------|
+	
+Testing
 
 	
-3.b) Aufruf Original JAR
--------------------------
-	Quelle: http://www.ibm.com/developerworks/websphere/library/techarticles/1004_pawlikowski/1004_pawlikowski.html
-	
-	"C:\Program Files (x86)\IBM\WebSphere\AppServer\java\bin\java" -cp ReqMetricsLogProcessing.jar com.ibm.spaws.rmprocessing.ProcessReqMetricsLogFile RMrecords.txt > out.txt

@@ -9,8 +9,11 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.logging.Logger;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
@@ -27,17 +30,18 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.engine.events.ParsingHasFinishedEvent;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
-public class RequestMetricsGui extends JPanel{
+public class RequestMetricsGui extends JDialog implements Observer {
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
-	private static RmProcessor processor;
+	private RmProcessor processor;
 	private static JTable table;
 	
 	public Dimension getMinimumSize() {
@@ -48,13 +52,14 @@ public class RequestMetricsGui extends JPanel{
 		return new Dimension(100, 800);
 	}
 	
-	public static void createAndShowGUI(final RmProcessor processor) {
-		RequestMetricsGui.processor = processor;
+	public void createAndShowGUI(final RmProcessor processor) {
+		this.processor = processor;
+		
+		// register the GUI as observer for the events of the processor
+		processor.addObserver(this);
 		
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
-
-		
 
 		JInternalFrame listInternalFrame = new JInternalFrame("Use Cases List", true, false, true, true);
 		listInternalFrame.add(listScrollPane, "Center");
@@ -80,26 +85,26 @@ public class RequestMetricsGui extends JPanel{
 		mainFrame.setVisible(true);
 	}
 
-	private static JMenuBar buildMenubar(JFrame mainFrame) {
+	private JMenuBar buildMenubar(JFrame mainFrame) {
 		JMenuBar menu = new JMenuBar();
 		
 		JMenu fileMenu = new JMenu("File");
 		final FileDialog fd = new FileDialog(mainFrame, "Load Scenario File", FileDialog.LOAD);
+		fd.setMultipleMode(true);
 		
 		JMenuItem fileLoadScenarioItem = new JMenuItem("Load Scenario");
 		fileLoadScenarioItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				System.out.println(e.getActionCommand());
 				fd.setVisible(true);
 				processor.reset();
-				try {
-					processor.processInputFile(fd.getDirectory() + fd.getFile());
-				} catch (Exception e1) {
-					return;
-				} 
+				File[] files = fd.getFiles();
+				if(files == null) return;
+				
+				processor.processInputFiles(files);
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
-				
 				// the width is currently hard coded and could be gathered from data in future
 				table.getColumnModel().getColumn(0).setMinWidth(215); 
 				table.getColumnModel().getColumn(0).setMaxWidth(515); 
@@ -117,8 +122,7 @@ public class RequestMetricsGui extends JPanel{
 				    }
 				};
 				table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
-		
-				
+
 			}
 		});
 		
@@ -127,26 +131,28 @@ public class RequestMetricsGui extends JPanel{
 		return menu;
 	}
 
-	private static JTable buildRootCaseTable() {
+	private JTable buildRootCaseTable() {
 		final JTable table = new JTable();
 		table.setFillsViewportHeight(true);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setAutoCreateRowSorter(true);
 		
+		// reference to this window 
+		final JDialog rootWindow = this;
+		
 		// add selection listener to select the use cases
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
-				
 				// check if we are in an event sequence and only process the last one
 				if(!event.getValueIsAdjusting() && !table.getSelectionModel().isSelectionEmpty()) {
 					int row = table.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
-						RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
+						final RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
 						
 						LOG.info("user selected use case " + useCase.getRmNode().toString());
 						
-						RMNode rmRecRoot = useCase.getRmNode();
-						JPanel jpanel = new UsecasePanel(rmRecRoot, processor);
+						final RMNode rmRecRoot = useCase.getRmNode();
+						final JPanel jpanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
 						treeInternalFrame.add(jpanel, "Center");
@@ -157,5 +163,13 @@ public class RequestMetricsGui extends JPanel{
 		});
 		
 		return table;
+	}
+
+	@Override
+	public void update(Observable o, Object event) {
+		if(event instanceof ParsingHasFinishedEvent) {
+			ParsingHasFinishedEvent concreteEvent = (ParsingHasFinishedEvent) event;
+			LOG.info("parsing of file " + concreteEvent.getFile().getName() + " has finished.");
+		}
 	}
 }
