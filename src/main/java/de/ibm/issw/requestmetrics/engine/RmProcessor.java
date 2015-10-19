@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Observable;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.ibm.issw.requestmetrics.engine.events.ParsingHasFinishedEvent;
 import de.ibm.issw.requestmetrics.model.DummyRmRootCase;
 import de.ibm.issw.requestmetrics.model.RMComponent;
 import de.ibm.issw.requestmetrics.model.RMNode;
@@ -27,7 +29,7 @@ import de.ibm.issw.requestmetrics.model.RMRecord;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 import de.ibm.issw.requestmetrics.util.StringPool;
 
-public class RmProcessor {
+public class RmProcessor extends Observable{
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
@@ -40,6 +42,11 @@ public class RmProcessor {
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
 	
+	public void processInputFiles(File[] files) {
+		for (File file : files) {
+			processInputFile (file);
+		}
+	}
 	public void processInputFile(String inputFileName) {
 		processInputFile(new File(inputFileName));
 	}
@@ -65,6 +72,10 @@ public class RmProcessor {
 			LOG.info("Number of testCase tables found: " + getRootCases().size());
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			//notify the observers that we are done
+			setChanged();
+			notifyObservers(new ParsingHasFinishedEvent(this, file));
 		}
 	}
 	

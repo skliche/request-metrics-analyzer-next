@@ -31,7 +31,8 @@ public class Starter {
 		if(!parametererror) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
-					RequestMetricsGui.createAndShowGUI(processor);
+					RequestMetricsGui gui = new RequestMetricsGui();
+					gui.createAndShowGUI(processor);
 				}
 			});
 		} else {
