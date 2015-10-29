@@ -8,7 +8,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
@@ -19,6 +21,7 @@ import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -30,12 +33,19 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
-import de.ibm.issw.requestmetrics.engine.events.ParsingHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
+import de.ibm.issw.requestmetrics.engine.events.NonUniqueRequestIdEvent;
+import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui extends JDialog implements Observer {
+	public RequestMetricsGui() {
+		
+		}
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
@@ -62,11 +72,11 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		JScrollPane listScrollPane = new JScrollPane(table);
 
 		JInternalFrame listInternalFrame = new JInternalFrame("Use Cases List", true, false, true, true);
-		listInternalFrame.add(listScrollPane, "Center");
+		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
 		
 		JPanel jpanel = new JPanel();
-		treeInternalFrame.add(jpanel, "Center");
+		treeInternalFrame.getContentPane().add(jpanel, "Center");
 		treeInternalFrame.setVisible(true);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -79,8 +89,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(900, 800);
 
-		mainFrame.add(menuBar, BorderLayout.NORTH);
-		mainFrame.add(splitPane, BorderLayout.CENTER);
+		mainFrame.getContentPane().add(menuBar, BorderLayout.NORTH);
+		mainFrame.getContentPane().add(splitPane, BorderLayout.CENTER);
 
 		mainFrame.setVisible(true);
 	}
@@ -96,13 +106,13 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		fileLoadScenarioItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println(e.getActionCommand());
 				fd.setVisible(true);
 				processor.reset();
 				File[] files = fd.getFiles();
 				if(files == null) return;
 				
 				processor.processInputFiles(files);
+				
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
@@ -122,7 +132,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				    }
 				};
 				table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
-
 			}
 		});
 		
@@ -155,7 +164,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						final JPanel jpanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
-						treeInternalFrame.add(jpanel, "Center");
+						treeInternalFrame.getContentPane().add(jpanel, "Center");
 						treeInternalFrame.setVisible(true);
 					}
 				}
@@ -164,12 +173,43 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		
 		return table;
 	}
-
+	
+	List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
+	StringBuffer s = new StringBuffer();
+	
 	@Override
 	public void update(Observable o, Object event) {
-		if(event instanceof ParsingHasFinishedEvent) {
-			ParsingHasFinishedEvent concreteEvent = (ParsingHasFinishedEvent) event;
+		if(event instanceof ParsingFileHasFinishedEvent) {
+			//notify user if parsing has finished
+			ParsingFileHasFinishedEvent concreteEvent = (ParsingFileHasFinishedEvent) event;
 			LOG.info("parsing of file " + concreteEvent.getFile().getName() + " has finished.");
+			
+		} else if(event instanceof ParsingAllFilesHasFinishedEvent) {
+			//notify user if parsing of all Files has finished
+			LOG.info("parsing of all files has finished.");
+			JOptionPane.showMessageDialog(null, "Parsing of all files has finished.\nThe following files are invalid:" + s);
+			
+		} else if (event instanceof UnsupportedFileEvent) {
+			//notify user if the loaded File could not be processed
+			UnsupportedFileEvent concreteEvent = (UnsupportedFileEvent) event;
+			s.append("\n - " + concreteEvent.getFile().getName());
+			
+		} else if (event instanceof LogParsingTypeEvent) {
+			LogParsingTypeEvent concreteEvent = (LogParsingTypeEvent) event;
+			String typeInfo = String.format("The loaded file '%s' was of type '%s'\n", concreteEvent.getFile().getName(),concreteEvent.getType());
+			LOG.info(typeInfo);
+			
+		} else if (event instanceof NonUniqueRequestIdEvent) {
+			//TODO: notify User that there are NonUnique Req IDs (if performance is okay), but do not display which ones
+			NonUniqueRequestIdEvent concreteEvent = (NonUniqueRequestIdEvent) event;
+			nonUniqueReqIds.add(concreteEvent);
+			
+			/*System.out.printf(" The file %s contains Request IDs that occur multiple times - this is an indicator that files of multiple servers have been merged.\n "
+					+ "The following Request IDs are affected: %s\n", concreteEvent.getFile().getName(), concreteEvent.getId());
+			OK*/
+		} else {
+			LOG.info("Failure");
+			
 		}
 	}
 }

@@ -145,7 +145,7 @@ public class UsecasePanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				if(selectedTreeNode != null) {
 					long totalTime = 0;
-					long toalZeroTimes = 0;
+					long totalZeroTimes = 0;
 					
 					@SuppressWarnings("unchecked")
 					final Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
@@ -154,12 +154,12 @@ public class UsecasePanel extends JPanel {
 						long elapsedTime = node.getRmNode().getData().getElapsedTime();
 						totalTime += elapsedTime;
 						if(elapsedTime == 0) {
-							toalZeroTimes+=1;
+							totalZeroTimes+=1;
 						}
 					}
 					String message = "Calculated time was " + totalTime + " ms.";
-					if(toalZeroTimes > 0) {
-						message = message + " However, there are " + toalZeroTimes + " children with zero ms execution time.";
+					if(totalZeroTimes > 0) {
+						message = message + " However, there are " + totalZeroTimes + " children with zero ms execution time.";
 					}
 					JOptionPane.showMessageDialog(null, message);
 				}

@@ -13,15 +13,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Observable;
 import java.util.Map.Entry;
+import java.util.Observable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.ibm.issw.requestmetrics.engine.events.ParsingHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
+import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
 import de.ibm.issw.requestmetrics.model.DummyRmRootCase;
 import de.ibm.issw.requestmetrics.model.RMComponent;
 import de.ibm.issw.requestmetrics.model.RMNode;
@@ -33,26 +36,36 @@ public class RmProcessor extends Observable{
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
-	private static final String REGEX = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
-	private static final Pattern PATTERN = Pattern.compile(REGEX);
+	private static final String REGEX1 = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
+	private static final String REGEX2 = "\\[([^\\]\\*]*)\\] (\\w{8}) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
+	private static final Pattern PATTERN_GREPPED = Pattern.compile(REGEX1);
+	private static final Pattern PATTERN_RAW = Pattern.compile(REGEX2);
 
 	private final Map<Long, List<RMNode>> parentNodes = new HashMap<Long, List<RMNode>>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
+	private List<Long> requestIds = new ArrayList<Long>();
 	
 	private Long elapsedTimeBorder = 0l;
 	private Long processedLines;
+	private File currentFile;
+	private String currentParsingType;
+	private String lastParsingType;
 	
 	public void processInputFiles(File[] files) {
 		for (File file : files) {
 			processInputFile (file);
 		}
+		setChanged();
+		notifyObservers(new ParsingAllFilesHasFinishedEvent(this, currentFile));
+		findUnreferencedEvents();
 	}
 	public void processInputFile(String inputFileName) {
 		processInputFile(new File(inputFileName));
 	}
 		
-	public void processInputFile (File file) {
+	public void processInputFile (File file) {		
 		this.processedLines = 0l;
+		currentFile = file;
 		
 		try {
 			final FileReader inputFileReader = new FileReader(file);
@@ -69,13 +82,20 @@ public class RmProcessor extends Observable{
 
 			inputStream.close();
 			LOG.info("Processed " + this.processedLines + " lines of PMRM0003I type.");
-			LOG.info("Number of testCase tables found: " + getRootCases().size());
+			
+			if(getRootCases().size() > 0) {
+				LOG.info("Number of testCase tables found: " + getRootCases().size());
+			} else if (getRootCases().size() == 0 && parentNodes.size() == 0){
+				//notify observers that the file can not be processed because it has the wrong format
+				setChanged();
+				notifyObservers(new UnsupportedFileEvent(this, file));
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			//notify the observers that we are done
 			setChanged();
-			notifyObservers(new ParsingHasFinishedEvent(this, file));
+			notifyObservers(new ParsingFileHasFinishedEvent(this, file));
 		}
 	}
 	
@@ -89,28 +109,51 @@ public class RmProcessor extends Observable{
 		RMRecord record = null;
 		
 		// parse the log using a REGEX, Strings are processed by a string pool
-		final Matcher logMatcher = PATTERN.matcher(line);
-		if(logMatcher.matches()) {
-			final String logFileName = StringPool.intern(logMatcher.group(1));
-			final String timestamp = StringPool.intern(logMatcher.group(2));
-			final String threadId = StringPool.intern(logMatcher.group(3));
+		final Matcher logMatcherGrepped = PATTERN_GREPPED.matcher(line);
+		final Matcher logMatcherRaw = PATTERN_RAW.matcher(line);
+		
+		int groupNr = 1;
+		String logFileName = null;
+		Matcher currentMatcher = null;
+				
+		//check, which type of file was loaded and by that, which logMatcher, Pattern & Regex has to be used
+		if(logMatcherGrepped.matches()) {
+			currentParsingType = LogParsingTypeEvent.TYPE_GREPPED;
+			currentMatcher = logMatcherGrepped;
+			logFileName = StringPool.intern(logMatcherGrepped.group(groupNr++));
+		} else if (logMatcherRaw.matches()) {
+			currentParsingType = LogParsingTypeEvent.TYPE_RAW;
+			currentMatcher = logMatcherRaw;
+			logFileName = currentFile.getName();
+		}
+		
+		if (currentParsingType != null && !(currentParsingType.equals(lastParsingType))) {
+			setChanged();
+			notifyObservers(new LogParsingTypeEvent(this, currentFile, currentParsingType));
+		}
+		
+		lastParsingType = currentParsingType;
+		
+		if (currentMatcher != null) {
+			final String timestamp = StringPool.intern(currentMatcher.group(groupNr++));
+			final String threadId = StringPool.intern(currentMatcher.group(groupNr++));
 			
-			final Integer parentVersion = Integer.parseInt(logMatcher.group(4));
-			final String parentIp = StringPool.intern(logMatcher.group(5));
-			final Long parentTimestamp = Long.parseLong(logMatcher.group(6));
-			final Long parentPid = Long.parseLong(logMatcher.group(7));
-			final Long parentRequestId = Long.parseLong(logMatcher.group(8));
-			final String parentEvent = StringPool.intern(logMatcher.group(9));
+			final Integer parentVersion = Integer.parseInt(currentMatcher.group(groupNr++));
+			final String parentIp = StringPool.intern(currentMatcher.group(groupNr++));
+			final Long parentTimestamp = Long.parseLong(currentMatcher.group(groupNr++));
+			final Long parentPid = Long.parseLong(currentMatcher.group(groupNr++));
+			final Long parentRequestId = Long.parseLong(currentMatcher.group(groupNr++));
+			final String parentEvent = StringPool.intern(currentMatcher.group(groupNr++));
 			
-			final Integer currentVersion = Integer.parseInt(logMatcher.group(10));
-			final String currentIp = StringPool.intern(logMatcher.group(11));
-			final Long currentTimestamp = Long.parseLong(logMatcher.group(12));
-			final Long currentPid = Long.parseLong(logMatcher.group(13));
-			final Long currentRequestId = Long.parseLong(logMatcher.group(14));
-			final String currentEvent = StringPool.intern(logMatcher.group(15));
-			final String type = StringPool.intern(logMatcher.group(16));
-			final String detail = StringPool.intern(logMatcher.group(17));
-			final Long currentElapsed = Long.parseLong(logMatcher.group(18));
+			final Integer currentVersion = Integer.parseInt(currentMatcher.group(groupNr++));
+			final String currentIp = StringPool.intern(currentMatcher.group(groupNr++));
+			final Long currentTimestamp = Long.parseLong(currentMatcher.group(groupNr++));
+			final Long currentPid = Long.parseLong(currentMatcher.group(groupNr++));
+			final Long currentRequestId = Long.parseLong(currentMatcher.group(groupNr++));
+			final String currentEvent = StringPool.intern(currentMatcher.group(groupNr++));
+			final String type = StringPool.intern(currentMatcher.group(groupNr++));
+			final String detail = StringPool.intern(currentMatcher.group(groupNr++));
+			final Long currentElapsed = Long.parseLong(currentMatcher.group(groupNr++));
 			
 			Date recordDate = null; //[5/28/15 11:10:39:507 EDT]
 			try {
@@ -129,6 +172,7 @@ public class RmProcessor extends Observable{
 									currentCmp, parentCmp, 
 									type, detail, 
 									currentElapsed);
+	
 		}
 		return record;
 	}
@@ -136,7 +180,16 @@ public class RmProcessor extends Observable{
 	private void addRmRecordToDataset(RMRecord rmRecord) {
 		// add the record to a node - we always create a node
 		final RMNode rmNode = new RMNode(rmRecord);
-
+		
+		/* TODO: commented because of performance issues
+		 * Long currentId = rmRecord.getCurrentCmp().getReqid();
+		if(currentId != null && !requestIds.contains(currentId)) {
+			requestIds.add(rmRecord.getCurrentCmp().getReqid());
+		} else {
+			setChanged();
+			notifyObservers(new NonUniqueRequestIdEvent(this, currentFile, currentId));
+		} */
+		
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.isRootCase()) {
 			// filter by time
@@ -224,7 +277,8 @@ public class RmProcessor extends Observable{
 		LOG.info("found " + parentNodeKeys.size() + " dirty events: " + parentNodeKeys);
 		return result;
 	}
-
+	
+	
 	public List<RmRootCase> getRootCases() {
 		return rootCases;
 	}
