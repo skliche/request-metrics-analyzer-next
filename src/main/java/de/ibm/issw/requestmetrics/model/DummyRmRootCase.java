@@ -12,7 +12,7 @@ public class DummyRmRootCase extends RmRootCase {
 						new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
 								new RMComponent(0, UNKNOWN, 0, 0, key, UNKNOWN), 
 								new RMComponent(0, UNKNOWN, 0, 0, key, UNKNOWN), 
-								UNKNOWN, UNKNOWN, Long.MAX_VALUE)
+								UNKNOWN, UNKNOWN + " / no root case", Long.MAX_VALUE)
 				)
 			);
 		this.key = key;
