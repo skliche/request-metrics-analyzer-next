@@ -158,7 +158,6 @@ public class RmProcessor extends Observable{
 	private RMRecord processSingleLine(String line) {
 		RMRecord record = null;
 		
-		
 		// parse the log using a REGEX, Strings are processed by a string pool
 		final Matcher logMatcherGrepped = PATTERN_GREPPED.matcher(line);
 		final Matcher logMatcherRaw = PATTERN_RAW.matcher(line);
