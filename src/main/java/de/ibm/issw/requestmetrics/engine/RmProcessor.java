@@ -57,7 +57,6 @@ public class RmProcessor extends Observable{
 		}
 		setChanged();
 		notifyObservers(new ParsingAllFilesHasFinishedEvent(this, currentFile));
-		findUnreferencedEvents();
 	}
 	public void processInputFile(String inputFileName) {
 		processInputFile(new File(inputFileName));

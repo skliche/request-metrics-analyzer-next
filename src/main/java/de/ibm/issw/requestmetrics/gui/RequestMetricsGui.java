@@ -48,7 +48,9 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		}
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	// GUI elements
-	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
+	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
+	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
+	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private RmProcessor processor;
@@ -71,7 +73,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
 
-		JInternalFrame listInternalFrame = new JInternalFrame("Use Cases List", true, false, true, true);
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
 		
@@ -112,7 +113,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				if(files == null) return;
 				
 				processor.processInputFiles(files);
-				
+				listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+
 				// remove the old model
 				table.setModel(new UsecaseTableModel(processor.getRootCases()));
 				// the width is currently hard coded and could be gathered from data in future
@@ -165,6 +167,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
 						treeInternalFrame.getContentPane().add(jpanel, "Center");
+						treeInternalFrame.setTitle("Transaction Drillown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
 						treeInternalFrame.setVisible(true);
 					}
 				}
