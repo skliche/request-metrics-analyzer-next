@@ -35,9 +35,9 @@ public class ChildNodeStatisticsTableModel extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		switch (columnIndex) {
-			case 1:	return entries.get(rowIndex).numberOfExecutions;
-			case 2: return entries.get(rowIndex).totalTime;
-			default: return entries.get(rowIndex).component;
+			case 1:	return entries.get(rowIndex).getNumberOfExecutions();
+			case 2: return entries.get(rowIndex).getTotalTime();
+			default: return entries.get(rowIndex).getComponent();
 		}
 	}
 

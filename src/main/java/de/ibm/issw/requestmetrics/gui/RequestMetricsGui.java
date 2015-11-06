@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
+import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.NonUniqueRequestIdEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
@@ -47,12 +48,17 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		
 		}
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
+	private List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
+	private StringBuffer invalidFiles = new StringBuffer();
 	// GUI elements
-	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Selected Use Case Tree View", true, false, true, true);
+	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
+	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
+	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private RmProcessor processor;
 	private static JTable table;
+	private ProgressBarDialog fileProcessingDialog;
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -71,7 +77,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
 
-		JInternalFrame listInternalFrame = new JInternalFrame("Use Cases List", true, false, true, true);
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
 		
@@ -85,7 +90,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		splitPane.setRightComponent(treeInternalFrame);
 		
 		JFrame mainFrame = new JFrame("RM Records Log File Analysis Results");
-		final JMenuBar menuBar = buildMenubar(mainFrame);
+		final JMenuBar menuBar = buildMenubar(mainFrame, processor);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(900, 800);
 
@@ -95,7 +100,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		mainFrame.setVisible(true);
 	}
 
-	private JMenuBar buildMenubar(JFrame mainFrame) {
+	private JMenuBar buildMenubar(JFrame mainFrame, final RmProcessor processor) {
 		JMenuBar menu = new JMenuBar();
 		
 		JMenu fileMenu = new JMenu("File");
@@ -108,30 +113,40 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
 				processor.reset();
-				File[] files = fd.getFiles();
-				if(files == null) return;
-				
-				processor.processInputFiles(files);
-				
-				// remove the old model
-				table.setModel(new UsecaseTableModel(processor.getRootCases()));
-				// the width is currently hard coded and could be gathered from data in future
-				table.getColumnModel().getColumn(0).setMinWidth(215); 
-				table.getColumnModel().getColumn(0).setMaxWidth(515); 
-				table.getColumnModel().getColumn(1).setMaxWidth(85); 
-				table.getColumnModel().getColumn(2).setMaxWidth(85); 
-				table.getColumnModel().getColumn(3).setMaxWidth(85); 
-				
-				// we write our own cell renderer for rendering the date values
-				TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
-				    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-				        if( value instanceof Date) {
-				            value = sdf.format(value);
-				        }
-				        return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				    }
-				};
-				table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
+				invalidFiles = new StringBuffer();
+				final File[] files = fd.getFiles();
+				if(files.length == 0) return;
+
+				//create a new dialog containing 2 progress bars
+				fileProcessingDialog = new ProgressBarDialog();
+
+				new Thread(new Runnable() {
+					public void run() {
+						processor.processInputFiles(files);
+						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+						
+						// remove the old model
+						table.setModel(new UsecaseTableModel(processor.getRootCases()));
+						// the width is currently hard coded and could be gathered from data in future
+						table.getColumnModel().getColumn(0).setMinWidth(215); 
+						table.getColumnModel().getColumn(0).setMaxWidth(515); 
+						table.getColumnModel().getColumn(1).setMaxWidth(85); 
+						table.getColumnModel().getColumn(2).setMaxWidth(85); 
+						table.getColumnModel().getColumn(3).setMaxWidth(85); 
+						
+						// we write our own cell renderer for rendering the date values
+						TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
+							public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+								if( value instanceof Date) {
+									value = sdf.format(value);
+								}
+								return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+							}
+						};
+						table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
+					}
+				}).start();
+
 			}
 		});
 		
@@ -157,7 +172,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 					int row = table.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
 						final RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
-						
 						LOG.info("user selected use case " + useCase.getRmNode().toString());
 						
 						final RMNode rmRecRoot = useCase.getRmNode();
@@ -165,6 +179,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
 						treeInternalFrame.getContentPane().add(jpanel, "Center");
+						treeInternalFrame.setTitle("Transaction Drillown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
 						treeInternalFrame.setVisible(true);
 					}
 				}
@@ -174,42 +189,46 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return table;
 	}
 	
-	List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
-	StringBuffer s = new StringBuffer();
-	
 	@Override
 	public void update(Observable o, Object event) {
 		if(event instanceof ParsingFileHasFinishedEvent) {
-			//notify user if parsing has finished
+			//create a log entry if parsing of a file has finished
 			ParsingFileHasFinishedEvent concreteEvent = (ParsingFileHasFinishedEvent) event;
-			LOG.info("parsing of file " + concreteEvent.getFile().getName() + " has finished.");
-			
-		} else if(event instanceof ParsingAllFilesHasFinishedEvent) {
-			//notify user if parsing of all Files has finished
+			LOG.info("parsing of file " + concreteEvent.getFileName() + " has finished.");
+		} 
+		else if (event instanceof PercentageIncreasedEvent) {
+			//update progress bar
+			PercentageIncreasedEvent concreteEvent = (PercentageIncreasedEvent) event;
+			fileProcessingDialog.update(concreteEvent);
+		} 
+		else if(event instanceof ParsingAllFilesHasFinishedEvent) {
+			/*notify user when parsing of all Files has finished, show which files could not be parsed, reset
+			 *the internal window frames and dispose the progress bar dialog
+			 */
 			LOG.info("parsing of all files has finished.");
-			JOptionPane.showMessageDialog(null, "Parsing of all files has finished.\nThe following files are invalid:" + s);
-			
-		} else if (event instanceof UnsupportedFileEvent) {
-			//notify user if the loaded File could not be processed
+			if (invalidFiles.length() > 0)
+				JOptionPane.showMessageDialog(null, "The following files are invalid and could not be parsed:" + invalidFiles);
+			fileProcessingDialog.dispose();
+			//TODO: repainting of the frames should be in its own method to be reused
+			treeInternalFrame.repaint();
+			listInternalFrame.repaint();
+		} 
+		else if (event instanceof UnsupportedFileEvent) {
+			//notify user if any of the loaded files could not be processed
 			UnsupportedFileEvent concreteEvent = (UnsupportedFileEvent) event;
-			s.append("\n - " + concreteEvent.getFile().getName());
-			
-		} else if (event instanceof LogParsingTypeEvent) {
+			invalidFiles.append("\n - " + concreteEvent.getFileName());
+		} 
+		else if (event instanceof LogParsingTypeEvent) {
+			//create a log info about the type of a loaded file
 			LogParsingTypeEvent concreteEvent = (LogParsingTypeEvent) event;
-			String typeInfo = String.format("The loaded file '%s' was of type '%s'\n", concreteEvent.getFile().getName(),concreteEvent.getType());
+			String typeInfo = String.format("The loaded file '%s' was of type '%s'\n", concreteEvent.getFileName(),concreteEvent.getType());
 			LOG.info(typeInfo);
-			
-		} else if (event instanceof NonUniqueRequestIdEvent) {
+		} 
+		else if (event instanceof NonUniqueRequestIdEvent) {
 			//TODO: notify User that there are NonUnique Req IDs (if performance is okay), but do not display which ones
 			NonUniqueRequestIdEvent concreteEvent = (NonUniqueRequestIdEvent) event;
 			nonUniqueReqIds.add(concreteEvent);
-			
-			/*System.out.printf(" The file %s contains Request IDs that occur multiple times - this is an indicator that files of multiple servers have been merged.\n "
-					+ "The following Request IDs are affected: %s\n", concreteEvent.getFile().getName(), concreteEvent.getId());
-			OK*/
-		} else {
-			LOG.info("Failure");
-			
-		}
+			LOG.info("There are" + nonUniqueReqIds.size() + "non unique request IDs");
+		} 
 	}
 }

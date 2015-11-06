@@ -1,9 +1,9 @@
 package de.ibm.issw.requestmetrics.gui.statistics;
 
 public class ChildNodeStatisticsEntry {
-	String component;
-	Long numberOfExecutions;
-	Long totalTime;
+	private String component;
+	private Long numberOfExecutions;
+	private Long totalTime;
 	
 	public String getComponent() {
 		return component;
