@@ -1,19 +1,19 @@
 package de.ibm.issw.requestmetrics.engine.events;
 
-import java.io.File;
 import java.util.EventObject;
 
 @SuppressWarnings("serial")
 public class LogParsingTypeEvent extends EventObject {
 	private String type;
-	private File file;
+	private String fileName;
 	public static final String TYPE_RAW = "raw";
 	public static final String TYPE_GREPPED = "grepped";
+	public static final String TYPE_UNKNOWN = "unknown";
 	
 	
-	public LogParsingTypeEvent (Object source, File file, String type) {
+	public LogParsingTypeEvent (Object source, String fileName, String type) {
 		super(source);
-		this.file = file;
+		this.fileName = fileName;
 		this.type = type;
 	}
 
@@ -21,7 +21,7 @@ public class LogParsingTypeEvent extends EventObject {
 		return type;
 	}
 
-	public File getFile() {
-		return file;
+	public String getFileName() {
+		return fileName;
 	}
 }
