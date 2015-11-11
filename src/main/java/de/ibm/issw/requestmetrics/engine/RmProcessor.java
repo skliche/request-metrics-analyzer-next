@@ -268,14 +268,14 @@ public class RmProcessor extends Observable{
 		} 
 		else {
 			final Long parentNodeId = rmRecord.getParentCmp().getReqid();
-			List<RMNode> childNodes = parentNodes.get(parentNodeId);
-			if (childNodes != null) {
-				childNodes.add(rmNode);
+			List<RMNode> childNodesOfParentNode = parentNodes.get(parentNodeId);
+			if (childNodesOfParentNode != null) {
+				childNodesOfParentNode.add(rmNode);
 			} 
 			else {
-				childNodes = new ArrayList<RMNode>();
-				childNodes.add(rmNode);
-				parentNodes.put(parentNodeId, childNodes);
+				childNodesOfParentNode = new ArrayList<RMNode>();
+				childNodesOfParentNode.add(rmNode);
+				parentNodes.put(parentNodeId, childNodesOfParentNode);
 			}
 		}
 	}
