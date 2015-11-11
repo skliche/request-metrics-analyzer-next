@@ -42,8 +42,9 @@ public class RmProcessor extends Observable{
 	private static final String REGEX_RAW = "\\[([^\\]\\*]*)\\] (\\w{8}) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN_GREPPED = Pattern.compile(REGEX_GREPPED);
 	private static final Pattern PATTERN_RAW = Pattern.compile(REGEX_RAW);
+	private static final String UNKNOWN = "UNKNOWN";
 
-	private final Map<Long, List<RMNode>> parentNodes = new HashMap<Long, List<RMNode>>();
+	private final Map<Long, RMNode> parentNodes = new HashMap<Long, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	private final List<Long> requestIds = new ArrayList<Long>();
 	
@@ -253,19 +254,30 @@ public class RmProcessor extends Observable{
 				final RmRootCase rootCase = new RmRootCase(rmNode);
 				rootCases.add(rootCase);
 			}
+			
+			// if we previously added a dummy record, we need to merge it with the real record
+			RMNode dummyNode = parentNodes.get(rmRecord.getCurrentCmp().getReqid());
+			if(dummyNode != null) {
+				rmNode.getChildren().addAll(dummyNode.getChildren());
+			}
+			parentNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
 		// otherwise the the current record is a child-record
 		} 
 		else {
 			final Long parentNodeId = rmRecord.getParentCmp().getReqid();
-			List<RMNode> childNodesOfParentNode = parentNodes.get(parentNodeId);
-			if (childNodesOfParentNode != null) {
-				childNodesOfParentNode.add(rmNode);
-			} 
-			else {
-				childNodesOfParentNode = new ArrayList<RMNode>();
-				childNodesOfParentNode.add(rmNode);
-				parentNodes.put(parentNodeId, childNodesOfParentNode);
+			RMNode parentNode = parentNodes.get(parentNodeId);
+			
+			// in case there is no log entry for the root record, we create a dummy record
+			if(parentNode == null) {
+				parentNode = new RMNode(
+						new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
+								new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
+								new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
+								UNKNOWN, UNKNOWN + " / no root case", Long.MAX_VALUE)
+				);
+				parentNodes.put(parentNodeId, parentNode);
 			}
+			parentNode.getChildren().add(rmNode);
 		}
 	}
 
@@ -281,10 +293,12 @@ public class RmProcessor extends Observable{
 		if(LOG.isLoggable(Level.INFO)) {
 			LOG.log(Level.INFO, "findByNodeId with record id " + nodeId);
 		}
-		List<RMNode> result = parentNodes.get(nodeId);
-		if(result == null) {
-			result = Collections.EMPTY_LIST;
+		final RMNode node = parentNodes.get(nodeId);
+		List<RMNode> result = Collections.EMPTY_LIST;
+		if(node == null) {
 			LOG.warning("findByRmRecId was called with an invalid node id");
+		} else {
+			result = parentNodes.get(nodeId).getChildren();
 		}
 		return result;
 	}
@@ -307,8 +321,8 @@ public class RmProcessor extends Observable{
 		}
 		
 		// build up a hash of all current nodes
-		for (Entry<Long, List<RMNode>> item : this.parentNodes.entrySet()) {
-			List<RMNode> nodes = item.getValue();
+		for (Entry<Long, RMNode> item : this.parentNodes.entrySet()) {
+			List<RMNode> nodes = item.getValue().getChildren();
 			for (RMNode node : nodes) {
 				currentNodeHash.put(node.getData().getCurrentCmp().getReqid(), true);
 			}
