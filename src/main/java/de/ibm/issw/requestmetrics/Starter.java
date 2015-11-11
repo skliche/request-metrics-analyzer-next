@@ -6,7 +6,6 @@ import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.gui.RequestMetricsGui;
 
 public class Starter {
-	private static boolean debug = false;
 
 	public static void main(String[] args) {
 		boolean parametererror = false;
@@ -21,9 +20,6 @@ public class Starter {
 						parametererror = true;
 						break;
 					}
-				} else if (param.startsWith("-DEBUG=")) {
-					if (param.equalsIgnoreCase("-DEBUG=on"))
-						debug = true;
 				}
 			}
 		}
@@ -45,7 +41,6 @@ public class Starter {
 			System.err.println("|------------|-----------|---------|------------------------------------------------------|");
 			System.err.println("| TIMEBORDER | No        | null	   | time in milliseconds for the requests that should be |");
 			System.err.println("|            |           |         | analyzed (null = all requests are analyzed)          |");
-			System.err.println("| DEBUG	     | No        | off     | print out debug information                          |");
 			System.err.println("|-----------------------------------------------------------------------------------------|");
 			System.exit(1);
 		}
