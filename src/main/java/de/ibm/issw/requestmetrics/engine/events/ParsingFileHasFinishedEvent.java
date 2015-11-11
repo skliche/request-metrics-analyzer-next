@@ -1,18 +1,17 @@
 package de.ibm.issw.requestmetrics.engine.events;
 
-import java.io.File;
 import java.util.EventObject;
 
 @SuppressWarnings("serial")
 public class ParsingFileHasFinishedEvent extends EventObject {
-	private File file;
+	private String fileName;
 	
-	public ParsingFileHasFinishedEvent(Object source, File file) {
+	public ParsingFileHasFinishedEvent(Object source, String fileName) {
 		super(source);
-		this.file = file;
+		this.fileName = fileName;
 	}
 
-	public File getFile() {
-		return file;
+	public String getFileName() {
+		return fileName;
 	}
 }
