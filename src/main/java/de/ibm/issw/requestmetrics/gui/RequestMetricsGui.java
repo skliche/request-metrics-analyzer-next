@@ -113,31 +113,40 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
 				processor.reset();
-				File[] files = fd.getFiles();
-				if(files == null) return;
-				
-				processor.processInputFiles(files);
-				listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+				invalidFiles = new StringBuffer();
+				final File[] files = fd.getFiles();
+				if(files.length == 0) return;
 
-				// remove the old model
-				table.setModel(new UsecaseTableModel(processor.getRootCases()));
-				// the width is currently hard coded and could be gathered from data in future
-				table.getColumnModel().getColumn(0).setMinWidth(215); 
-				table.getColumnModel().getColumn(0).setMaxWidth(515); 
-				table.getColumnModel().getColumn(1).setMaxWidth(85); 
-				table.getColumnModel().getColumn(2).setMaxWidth(85); 
-				table.getColumnModel().getColumn(3).setMaxWidth(85); 
-				
-				// we write our own cell renderer for rendering the date values
-				TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
-				    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-				        if( value instanceof Date) {
-				            value = sdf.format(value);
-				        }
-				        return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				    }
-				};
-				table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
+				//create a new dialog containing 2 progress bars
+				fileProcessingDialog = new ProgressBarDialog();
+
+				new Thread(new Runnable() {
+					public void run() {
+						processor.processInputFiles(files);
+						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+						
+						// remove the old model
+						table.setModel(new UsecaseTableModel(processor.getRootCases()));
+						// the width is currently hard coded and could be gathered from data in future
+						table.getColumnModel().getColumn(0).setMinWidth(215); 
+						table.getColumnModel().getColumn(0).setMaxWidth(515); 
+						table.getColumnModel().getColumn(1).setMaxWidth(85); 
+						table.getColumnModel().getColumn(2).setMaxWidth(85); 
+						table.getColumnModel().getColumn(3).setMaxWidth(85); 
+						
+						// we write our own cell renderer for rendering the date values
+						TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
+							public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+								if( value instanceof Date) {
+									value = sdf.format(value);
+								}
+								return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+							}
+						};
+						table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
+					}
+				}).start();
+
 			}
 		});
 		
@@ -170,7 +179,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.setVisible(false);
 						treeInternalFrame.getContentPane().removeAll();
 						treeInternalFrame.getContentPane().add(jpanel, "Center");
-						treeInternalFrame.setTitle("Transaction Drillown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
+						treeInternalFrame.setTitle("Transaction Drilldown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
 						treeInternalFrame.setVisible(true);
 					}
 				}
