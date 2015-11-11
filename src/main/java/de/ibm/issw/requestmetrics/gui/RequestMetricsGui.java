@@ -116,6 +116,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				invalidFiles = new StringBuffer();
 				final File[] files = fd.getFiles();
 				if(files.length == 0) return;
+				
+				resetTreeInternalFrame();
 
 				//create a new dialog containing 2 progress bars
 				fileProcessingDialog = new ProgressBarDialog();
@@ -176,17 +178,27 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						
 						final RMNode rmRecRoot = useCase.getRmNode();
 						final JPanel jpanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
-						treeInternalFrame.setVisible(false);
-						treeInternalFrame.getContentPane().removeAll();
+						resetTreeInternalFrame();
 						treeInternalFrame.getContentPane().add(jpanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
-						treeInternalFrame.setVisible(true);
 					}
 				}
 			} 
 		});
 		
 		return table;
+	}
+	
+	private void resetTreeInternalFrame() {
+		treeInternalFrame.setVisible(false);
+		treeInternalFrame.setTitle("Transaction Drilldown");
+		treeInternalFrame.getContentPane().removeAll();
+		treeInternalFrame.setVisible(true);
+	}
+	
+	private void repaintGui() {
+		treeInternalFrame.repaint();
+		listInternalFrame.repaint();
 	}
 	
 	@Override
@@ -209,9 +221,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			if (invalidFiles.length() > 0)
 				JOptionPane.showMessageDialog(null, "The following files are invalid and could not be parsed:" + invalidFiles);
 			fileProcessingDialog.dispose();
-			//TODO: repainting of the frames should be in its own method to be reused
-			treeInternalFrame.repaint();
-			listInternalFrame.repaint();
+			repaintGui();
 		} 
 		else if (event instanceof UnsupportedFileEvent) {
 			//notify user if any of the loaded files could not be processed
