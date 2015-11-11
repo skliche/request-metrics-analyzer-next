@@ -245,17 +245,6 @@ public class RmProcessor extends Observable{
 		// add the record to a node - we always create a node
 		final RMNode rmNode = new RMNode(rmRecord);
 		
-		/* TODO: commented because of performance issues
-		Long currentId = rmRecord.getCurrentCmp().getReqid();
-		//check if the current Record-ID is not yet stored in our list of IDs 
-		if(currentId != null && !requestIds.contains(currentId)) {
-			requestIds.add(rmRecord.getCurrentCmp().getReqid());
-		} 
-		else {
-			setChanged();
-			notifyObservers(new NonUniqueRequestIdEvent(this, currentFile, currentId));
-		} */
-		
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.isRootCase()) {
 			// filter by time
