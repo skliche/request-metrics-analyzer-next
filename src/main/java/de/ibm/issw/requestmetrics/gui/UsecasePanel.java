@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JDialog;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -25,8 +24,8 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
-import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsEntry;
 import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsDialog;
+import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsEntry;
 import de.ibm.issw.requestmetrics.model.RMNode;
 
 @SuppressWarnings("serial")
@@ -79,9 +78,6 @@ public class UsecasePanel extends JPanel {
 	 */
 	private JPopupMenu buildPopupMenu() {
 	    JPopupMenu menu = new JPopupMenu();
-	    JMenuItem exportItem = new JMenuItem("Calculate time spend in children");
-	    exportItem.addActionListener(buildTimeCalculationListener());
-	    menu.add(exportItem);
 	    
 	    JMenuItem statisticsItem = new JMenuItem("Calculate statistics for children");
 	    statisticsItem.addActionListener(buildNodeStatisticsListener());
@@ -103,6 +99,8 @@ public class UsecasePanel extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(selectedTreeNode != null) {
+					long totalTimeChildren = 0;
+					long totalZeroTimesChildren = 0;
 					final Map<String, ChildNodeStatisticsEntry> stats = new HashMap<String, ChildNodeStatisticsEntry>();
 					
 					@SuppressWarnings("unchecked")
@@ -111,62 +109,32 @@ public class UsecasePanel extends JPanel {
 						final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
 						
 						final String detail = node.getRmNode().rmData.getDetailCmp();
-						final long elapsed = node.getRmNode().rmData.getElapsedTime();
+						final long elapsedTime = node.getRmNode().rmData.getElapsedTime();
+						totalTimeChildren += elapsedTime;
+						if(elapsedTime == 0) totalZeroTimesChildren+=1;
 					
 						if(stats.containsKey(detail)) {
 							final ChildNodeStatisticsEntry entry = stats.get(detail);
-							entry.setTotalTime(entry.getTotalTime() + elapsed);
+							entry.setTotalTime(entry.getTotalTime() + elapsedTime);
 							entry.setNumberOfExecutions(entry.getNumberOfExecutions() + 1);
 						} else {
 							final ChildNodeStatisticsEntry entry = new ChildNodeStatisticsEntry();
 							entry.setComponent(detail);
-							entry.setTotalTime(elapsed);
+							entry.setTotalTime(elapsedTime);
 							entry.setNumberOfExecutions(1l);
+							entry.setNumberOfChildren(node.getChildCount());
 							stats.put(detail, entry);
 						}
 					}
 					
 					final List<ChildNodeStatisticsEntry> entries = new ArrayList<ChildNodeStatisticsEntry>(stats.values());
-					final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, "Statistics for children of " + selectedTreeNode.getRmNode().getData().getDetailCmp(), entries);
+					final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, selectedTreeNode.getRmNode().getData(), entries, selectedTreeNode.getChildCount(), totalTimeChildren, totalZeroTimesChildren);
 					panel.setVisible(true);
 				}
 			}
 		};
 	}
 
-	/**
-	 * Calculates the time the childnodes took to perform its work and displays 
-	 * the result as messagebox
-	 * @return
-	 */
-	private ActionListener buildTimeCalculationListener() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if(selectedTreeNode != null) {
-					long totalTime = 0;
-					long totalZeroTimes = 0;
-					
-					@SuppressWarnings("unchecked")
-					final Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
-					while (childNodes.hasMoreElements()) {
-						final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
-						long elapsedTime = node.getRmNode().getData().getElapsedTime();
-						totalTime += elapsedTime;
-						if(elapsedTime == 0) {
-							totalZeroTimes+=1;
-						}
-					}
-					String message = "Calculated time was " + totalTime + " ms.";
-					if(totalZeroTimes > 0) {
-						message = message + " However, there are " + totalZeroTimes + " children with zero ms execution time.";
-					}
-					JOptionPane.showMessageDialog(null, message);
-				}
-			}
-		};
-	}
-	
 	/** 
 	 * The collapse listener is able to collapse the current selected subtree
 	 * @param expand true if the listener should expand, or false if it should collapse the subtree
