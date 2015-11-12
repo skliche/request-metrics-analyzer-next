@@ -158,7 +158,6 @@ public class UsecasePanel extends JPanel {
 	
 	private void getRecursive(AnalyzerTreeNode node, RMNode rmNode, RmProcessor processor, List<Long> visited) {
 		final Long rmRecId = rmNode.getData().getCurrentCmp().getReqid();
-		final List<RMNode> children = processor.findByRmRecId(rmRecId);
 		
 		// perform deadlock check
 		if(visited.contains(rmRecId)) {
@@ -167,7 +166,7 @@ public class UsecasePanel extends JPanel {
 		} 
 		visited.add(rmRecId);
 		
-		for (final RMNode childRMRecNode : children) {
+		for (final RMNode childRMRecNode : rmNode.getChildren()) {
 			final AnalyzerTreeNode childElement = new AnalyzerTreeNode(childRMRecNode);
 			node.add(childElement);
 			getRecursive(childElement, childRMRecNode, processor, visited);
