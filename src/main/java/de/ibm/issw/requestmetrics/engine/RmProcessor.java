@@ -44,7 +44,7 @@ public class RmProcessor extends Observable{
 	private static final Pattern PATTERN_RAW = Pattern.compile(REGEX_RAW);
 	private static final String UNKNOWN = "UNKNOWN";
 
-	private final Map<Long, RMNode> parentNodes = new HashMap<Long, RMNode>();
+	private final Map<Long, RMNode> allNodes = new HashMap<Long, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	private final List<Long> requestIds = new ArrayList<Long>();
 	
@@ -135,7 +135,7 @@ public class RmProcessor extends Observable{
 			if(getRootCases().size() > 0) {
 				LOG.info("Number of testCase tables found: " + getRootCases().size());
 			} 
-			else if (getRootCases().size() == 0 && parentNodes.size() == 0){
+			else if (getRootCases().size() == 0 && allNodes.size() == 0){
 				//notify observers that the file can not be processed because no metrics data was found
 				setChanged();
 				notifyObservers(new UnsupportedFileEvent(this, file.getName()));
@@ -256,16 +256,16 @@ public class RmProcessor extends Observable{
 			}
 			
 			// if we previously added a dummy record, we need to merge it with the real record
-			RMNode dummyNode = parentNodes.get(rmRecord.getCurrentCmp().getReqid());
+			RMNode dummyNode = allNodes.get(rmRecord.getCurrentCmp().getReqid());
 			if(dummyNode != null) {
 				rmNode.getChildren().addAll(dummyNode.getChildren());
 			}
-			parentNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
+			allNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
 		// otherwise the the current record is a child-record
 		} 
 		else {
 			final Long parentNodeId = rmRecord.getParentCmp().getReqid();
-			RMNode parentNode = parentNodes.get(parentNodeId);
+			RMNode parentNode = allNodes.get(parentNodeId);
 			
 			// in case there is no log entry for the root record, we create a dummy record
 			if(parentNode == null) {
@@ -275,9 +275,18 @@ public class RmProcessor extends Observable{
 								new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
 								UNKNOWN, UNKNOWN + " / no root case", Long.MAX_VALUE)
 				);
-				parentNodes.put(parentNodeId, parentNode);
+				allNodes.put(parentNodeId, parentNode);
 			}
 			parentNode.getChildren().add(rmNode);
+
+			// If events are not in order, it can happen that we already have the current
+			// nodeId in the allNodes map. Then we need to merge with the previously created dummy.
+			final Long currentNodeId = rmRecord.getCurrentCmp().getReqid();
+			RMNode dirtyCurrentNode = allNodes.get(currentNodeId);
+			if(dirtyCurrentNode != null) {
+				rmNode.getChildren().addAll(dirtyCurrentNode.getChildren());
+			}
+			allNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
 		}
 	}
 
@@ -293,12 +302,12 @@ public class RmProcessor extends Observable{
 		if(LOG.isLoggable(Level.INFO)) {
 			LOG.log(Level.INFO, "findByNodeId with record id " + nodeId);
 		}
-		final RMNode node = parentNodes.get(nodeId);
+		final RMNode node = allNodes.get(nodeId);
 		List<RMNode> result = Collections.EMPTY_LIST;
 		if(node == null) {
 			LOG.warning("findByRmRecId was called with an invalid node id");
 		} else {
-			result = parentNodes.get(nodeId).getChildren();
+			result = allNodes.get(nodeId).getChildren();
 		}
 		return result;
 	}
@@ -321,7 +330,7 @@ public class RmProcessor extends Observable{
 		}
 		
 		// build up a hash of all current nodes
-		for (Entry<Long, RMNode> item : this.parentNodes.entrySet()) {
+		for (Entry<Long, RMNode> item : this.allNodes.entrySet()) {
 			List<RMNode> nodes = item.getValue().getChildren();
 			for (RMNode node : nodes) {
 				currentNodeHash.put(node.getData().getCurrentCmp().getReqid(), true);
@@ -330,7 +339,7 @@ public class RmProcessor extends Observable{
 		
 		// now do some set theory and by that filter
 		// TODO: we are currently destroying the parentNodeKeys which is shit
-		Set<Long> parentNodeKeys = parentNodes.keySet();
+		Set<Long> parentNodeKeys = allNodes.keySet();
 		parentNodeKeys.removeAll(parentNodeHash.keySet());
 		parentNodeKeys.removeAll(currentNodeHash.keySet());
 		
@@ -354,7 +363,7 @@ public class RmProcessor extends Observable{
 	 */
 	public void reset() {
 		rootCases.clear();
-		parentNodes.clear();
+		allNodes.clear();
 		fileLinesMap = null;
 		totalLinesAmount = 0l;
 		totalProcessedLines = 0l;
