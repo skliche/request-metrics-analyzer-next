@@ -15,6 +15,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -26,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -59,6 +61,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private RmProcessor processor;
 	private static JTable table;
 	private ProgressBarDialog fileProcessingDialog;
+	private JButton jumpToMostExpSubtransButton;
+	private UsecasePanel transactionDrilldownPanel;
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -80,10 +84,18 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
 		
-		JPanel jpanel = new JPanel();
-		treeInternalFrame.getContentPane().add(jpanel, "Center");
+		JToolBar drillDownToolBar = new JToolBar();
+		treeInternalFrame.getContentPane().add(drillDownToolBar, "North");
 		treeInternalFrame.setVisible(true);
 
+		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
+		drillDownToolBar.setFloatable(false);
+		jumpToMostExpSubtransButton = new JButton("Jump to most expensive subtransaction");
+		jumpToMostExpSubtransButton.setEnabled(false);
+		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction());
+		drillDownToolBar.add(jumpToMostExpSubtransButton);
+		
+		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
 		splitPane.setLeftComponent(listInternalFrame);
@@ -117,7 +129,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				final File[] files = fd.getFiles();
 				if(files.length == 0) return;
 				
-				resetTreeInternalFrame();
+				resetGui();
 
 				//create a new dialog containing 2 progress bars
 				fileProcessingDialog = new ProgressBarDialog();
@@ -158,47 +170,67 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	}
 
 	private JTable buildRootCaseTable() {
-		final JTable table = new JTable();
-		table.setFillsViewportHeight(true);
-		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		table.setAutoCreateRowSorter(true);
+		final JTable businessTransactionTable = new JTable();
+		businessTransactionTable.setFillsViewportHeight(true);
+		businessTransactionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		businessTransactionTable.setAutoCreateRowSorter(true);
 		
 		// reference to this window 
 		final JDialog rootWindow = this;
 		
 		// add selection listener to select the use cases
-		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+		businessTransactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
 				// check if we are in an event sequence and only process the last one
-				if(!event.getValueIsAdjusting() && !table.getSelectionModel().isSelectionEmpty()) {
-					int row = table.getSelectedRow();
+				if(!event.getValueIsAdjusting() && !businessTransactionTable.getSelectionModel().isSelectionEmpty()) {
+					int row = businessTransactionTable.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
-						final RmRootCase useCase = processor.getRootCases().get(table.convertRowIndexToModel(row));
+						final RmRootCase useCase = processor.getRootCases().get(businessTransactionTable.convertRowIndexToModel(row));
 						LOG.info("user selected use case " + useCase.getRmNode().toString());
 						
 						final RMNode rmRecRoot = useCase.getRmNode();
-						final JPanel jpanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
-						resetTreeInternalFrame();
-						treeInternalFrame.getContentPane().add(jpanel, "Center");
+						rmRecRoot.calculateExecutionTime();
+						resetGui();
+						transactionDrilldownPanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
+						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + useCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + useCase.getRmNode().getData().getDetailCmp());
+						jumpToMostExpSubtransButton.setEnabled(true);
+						jumpToMostExpSubtransButton.setRolloverEnabled(true);
+						treeInternalFrame.setVisible(true);
+						repaintGui();
 					}
 				}
 			} 
 		});
 		
-		return table;
+		return businessTransactionTable;
 	}
 	
-	private void resetTreeInternalFrame() {
+	private ActionListener jumpToMostExpensiveSubtransaction() {
+		return new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("hello");
+				RMNode mostExpensiveSubtransaction = processor.findMostExpensiveSubtransaction();
+				table.changeSelection(1, 1, false, false);
+				
+			}
+		};
+	}
+	
+	private void resetGui() {
 		treeInternalFrame.setVisible(false);
 		treeInternalFrame.setTitle("Transaction Drilldown");
-		treeInternalFrame.getContentPane().removeAll();
+		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
 		treeInternalFrame.setVisible(true);
+		jumpToMostExpSubtransButton.setEnabled(false);
 	}
 	
 	private void repaintGui() {
 		treeInternalFrame.repaint();
 		listInternalFrame.repaint();
+		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
 	@Override
