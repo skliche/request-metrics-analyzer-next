@@ -6,6 +6,20 @@ import java.util.List;
 public class RMNode {
 	public final RMRecord rmData;
 	public final List<RMNode> children = new ArrayList<RMNode>();
+	private long executionTime;
+
+	public long calculateExecutionTime () {
+		executionTime = rmData.getElapsedTime();
+		if (!children.isEmpty()) {
+			long childExecutionTimes = 0l;
+			for (RMNode childNode : children) {
+				if (childNode != null) childExecutionTimes += childNode.getData().getElapsedTime();
+			}
+			executionTime -= childExecutionTimes;
+		}
+		System.out.println(executionTime);
+		return executionTime;
+	}
 
 	public RMNode(RMRecord rmData) {
 		this.rmData = rmData;
@@ -21,5 +35,9 @@ public class RMNode {
 
 	public RMRecord getData() {
 		return this.rmData;
+	}
+	
+	public long getExecutionTime() {
+		return executionTime;
 	}
 }
