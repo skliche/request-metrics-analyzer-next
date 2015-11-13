@@ -294,7 +294,7 @@ public class RmProcessor extends Observable{
 		RMNode mostExpensiveSubtransaction = null;
 		
 		for (Entry<Long, RMNode> parentNodeEntry : allNodes.entrySet()) {
-			if (parentNodeEntry.getValue().getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime() && mostExpensiveSubtransaction != null) 
+			if (mostExpensiveSubtransaction != null && parentNodeEntry.getValue().getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
 					mostExpensiveSubtransaction = parentNodeEntry.getValue();
 		}
 		return mostExpensiveSubtransaction;
