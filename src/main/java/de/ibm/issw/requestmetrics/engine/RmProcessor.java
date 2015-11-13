@@ -289,16 +289,6 @@ public class RmProcessor extends Observable{
 			allNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
 		}
 	}
-	
-	public RMNode findMostExpensiveSubtransaction () {
-		RMNode mostExpensiveSubtransaction = null;
-		
-		for (Entry<Long, RMNode> parentNodeEntry : allNodes.entrySet()) {
-			if (mostExpensiveSubtransaction != null && parentNodeEntry.getValue().getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
-					mostExpensiveSubtransaction = parentNodeEntry.getValue();
-		}
-		return mostExpensiveSubtransaction;
-	}
 
 	/**
 	 * Find all nodes by the rm record id. The method looks in the parent node index.

@@ -11,6 +11,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.swing.JDialog;
@@ -196,6 +197,31 @@ public class UsecasePanel extends JPanel {
 	        }
         }
     }
+	
+	public void selectTreeNode (RMNode mostExpensiveNode) {
+		tree.clearSelection();
+		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
+		
+		@SuppressWarnings("unchecked")
+		Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
+		while (subtransactions.hasMoreElements()) {
+			final UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
+			if (mostExpensiveNode.equals(node)) {
+				tree.setSelectionRow(1);
+			}
+		}
+	}
+	
+	public static RMNode findMostExpensiveSubtransaction (RMNode currentNode) {
+		RMNode mostExpensiveSubtransaction = null;
+		
+		for (RMNode childNode : currentNode.getChildren()) {
+			if (mostExpensiveSubtransaction != null && childNode.getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
+				mostExpensiveSubtransaction = childNode;
+			findMostExpensiveSubtransaction(childNode);
+		}
+		return mostExpensiveSubtransaction;
+	}
 	
 	/**
 	 * We create our own implementation of the DefaultMutableTreeNode 
