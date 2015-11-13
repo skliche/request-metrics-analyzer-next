@@ -1,0 +1,47 @@
+Activating Request Metrics in WebSphere Admin Console
+-----------------------------------------------------
+	1. In the navigation tree, expand Monitoring and Tuning
+	2. Click Request Metrics
+	3. Enable RM by checking the Prepare servers for request metrics collection checkbox
+	4. Specify Components to be instrumented by selecting an option from:
+		- None: RM instrumentation is disabled.
+		- All: RM data will be collected for all components listed under the 'Custom' list (see below).
+		- Custom: Specify a set of components for which RM instrumentation will be enabled. You can select any combination from the provided list: AsyncBeans, EJB, JCA, JDBC, JMS, JNDI, portlet, SIB, servlet, servlet filter, and Web services.
+	5. In the "Trace level" field, select from the list how much information to gather:
+		None: No data at all (RM instrumentation is disabled).
+		Hops: Collecting information on process boundaries only.
+		Performance_debug: At the "Hops" level, plus one additional (first) level of the intra-process servlet and Enterprise JavaBeans (EJB) call.
+		Debug: Detailed information with response times for all intra-process calls.
+	6. In the "Request metrics Destination" section, check where the RM data will be sent to:
+		Standard Logs: RM records will be written to the SystemOut.log file.
+		Application Response Measurement (ARM) agent: RM will use an underlying ARM infrastructure via specified ARM agent calls. By choosing that option, you need to specify two additional parameters:
+			Agent Type: Select between ARM40 and TIVOLI_ARM.
+			ARM transaction factory implementation class name (value needed only if the ARM40 option above is selected): Enter the name of the ARM transaction factory implementation class that is present in the ARM library.
+			Note: Before enabling ARM, you need to install an ARM agent and configure it to the appropriate classpath and path, following the instructions of the ARM provider. 
+	7. Confirm your configuration by clicking the Apply button.
+	
+	For filtering possibilities go to "Custom Properties -> Filter"
+		  Type				Value (Examples)
+		- EJB				com.ibm.*
+		- URI				/hitcount
+		- IP-Quelle			10.62.148.17
+		- Web Service		wsdlPort=aaa:op=bbb:nameSpace=ccc 
+		- JMS				destination=aaa
+
+Filtering Request Metrics from SystemOut (optional)
+---------------------------------------------------
+	Via terminal change to the log folder of the application server and run the following command:
+		grep -H "PMRM0003I" SystemOut*.log > metrics.txt
+		
+	Hint: The filtering is useful for a large SystemOut files. It speeds up the preprocessing of the files in Request Metrics Analyzer Next tool.
+
+Starting Request Metrics Analyzer Next
+--------------------------------------
+	java -cp RequestMetricsAnalyzer.jar Starter -TIMEBORDER=100000
+	
+	|-----------------------------------------------------------------------------------------|
+	| Parameter  | Mandatory | Default | Description                                          |
+	|------------|-----------|---------|------------------------------------------------------|
+	| TIMEBORDER | No        | null    | time in milliseconds for the requests that should be |
+	|            |           |         | analyzed (null = all requests are analyzed)          |
+	|-----------------------------------------------------------------------------------------|
