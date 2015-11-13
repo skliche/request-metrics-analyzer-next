@@ -302,12 +302,12 @@ public class RmProcessor extends Observable{
 		if(LOG.isLoggable(Level.INFO)) {
 			LOG.log(Level.INFO, "findByNodeId with record id " + nodeId);
 		}
-		final RMNode node = allNodes.get(nodeId);
+		final RMNode node = parentNodes.get(nodeId);
 		List<RMNode> result = Collections.EMPTY_LIST;
 		if(node == null) {
 			LOG.warning("findByRmRecId was called with an invalid node id");
 		} else {
-			result = allNodes.get(nodeId).getChildren();
+			result = parentNodes.get(nodeId).getChildren();
 		}
 		return result;
 	}
@@ -330,7 +330,7 @@ public class RmProcessor extends Observable{
 		}
 		
 		// build up a hash of all current nodes
-		for (Entry<Long, RMNode> item : this.allNodes.entrySet()) {
+		for (Entry<Long, RMNode> item : this.parentNodes.entrySet()) {
 			List<RMNode> nodes = item.getValue().getChildren();
 			for (RMNode node : nodes) {
 				currentNodeHash.put(node.getData().getCurrentCmp().getReqid(), true);
@@ -339,7 +339,7 @@ public class RmProcessor extends Observable{
 		
 		// now do some set theory and by that filter
 		// TODO: we are currently destroying the parentNodeKeys which is shit
-		Set<Long> parentNodeKeys = allNodes.keySet();
+		Set<Long> parentNodeKeys = parentNodes.keySet();
 		parentNodeKeys.removeAll(parentNodeHash.keySet());
 		parentNodeKeys.removeAll(currentNodeHash.keySet());
 		
@@ -363,7 +363,7 @@ public class RmProcessor extends Observable{
 	 */
 	public void reset() {
 		rootCases.clear();
-		allNodes.clear();
+		parentNodes.clear();
 		fileLinesMap = null;
 		totalLinesAmount = 0l;
 		totalProcessedLines = 0l;
