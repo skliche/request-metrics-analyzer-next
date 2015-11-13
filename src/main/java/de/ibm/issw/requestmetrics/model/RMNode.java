@@ -13,7 +13,7 @@ public class RMNode {
 		if (!children.isEmpty()) {
 			long childExecutionTimes = 0l;
 			for (RMNode childNode : children) {
-				if (childNode != null) childExecutionTimes += childNode.getData().getElapsedTime();
+				if (childNode != null) childExecutionTimes += childNode.calculateExecutionTime();
 			}
 			executionTime -= childExecutionTimes;
 		}
