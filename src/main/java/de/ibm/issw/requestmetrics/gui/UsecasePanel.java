@@ -11,7 +11,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.swing.JDialog;
@@ -36,9 +35,11 @@ public class UsecasePanel extends JPanel {
 	private TreePath currentTreePath;
 	private JTree tree;
 	private JDialog rootWindow;
+	private RMNode mostExpensiveSubtransaction;
 	
 	public UsecasePanel(JDialog rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
 		this.rootWindow = rootWindow;
+		mostExpensiveSubtransaction = null;
 		
 		setLayout(new BorderLayout());
 		
@@ -198,28 +199,38 @@ public class UsecasePanel extends JPanel {
         }
     }
 	
-	public void selectTreeNode (RMNode mostExpensiveNode) {
+	public void selectTreeNode (RMNode rmNode) {
 		tree.clearSelection();
 		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
-		
-		@SuppressWarnings("unchecked")
-		Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
-		while (subtransactions.hasMoreElements()) {
-			final UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
-			if (mostExpensiveNode.equals(node)) {
-				tree.setSelectionRow(1);
+		if (rmNode.getData().getCurrentCmp().getReqid() == rootNode.rmnode.getData().getCurrentCmp().getReqid()) {
+			tree.setSelectionRow(0);
+			System.out.println("should work");
+		} else {
+			@SuppressWarnings("unchecked")
+			Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
+			while (subtransactions.hasMoreElements()) {
+				final UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
+				System.out.println("else + inner if clause");
+				if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
+					TreePath path = new TreePath(node.getPath());
+					tree.setSelectionPath(path);
+					tree.setSelectionRow(node.getLevel());
+					System.out.println("should select");
+					break;
+				}
 			}
 		}
 	}
 	
-	public static RMNode findMostExpensiveSubtransaction (RMNode currentNode) {
-		RMNode mostExpensiveSubtransaction = null;
+	public RMNode findMostExpensiveSubtransaction (RMNode currentNode) {
+		if(mostExpensiveSubtransaction == null) mostExpensiveSubtransaction = currentNode;
 		
 		for (RMNode childNode : currentNode.getChildren()) {
-			if (mostExpensiveSubtransaction != null && childNode.getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
+			if (childNode.getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
 				mostExpensiveSubtransaction = childNode;
 			findMostExpensiveSubtransaction(childNode);
 		}
+		System.out.println(currentNode.getData().getElapsedTime() + " // " + currentNode.getExecutionTime() + " // " + currentNode.getData().getCurrentCmp().getReqid());
 		return mostExpensiveSubtransaction;
 	}
 	
