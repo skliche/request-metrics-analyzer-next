@@ -90,10 +90,11 @@ public class RequestMetricsGui extends JDialog implements Observer {
 
 		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
 		drillDownToolBar.setFloatable(false);
-		jumpToMostExpSubtransButton = new JButton("Jump to most expensive subtransaction");
+		jumpToMostExpSubtransButton = new JButton("Highest Execution Time");
+		jumpToMostExpSubtransButton.setToolTipText("Jumps to the subtransaction with the highest execution time.");
 		jumpToMostExpSubtransButton.setEnabled(false);
 		drillDownToolBar.add(jumpToMostExpSubtransButton);
-		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction(getCurrentSelectedRootNode()));
+		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction());
 		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
@@ -187,7 +188,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(businessTransactionTable.convertRowIndexToModel(row));
 						LOG.info("user selected use case " + currentSelectedRootCase.getRmNode().toString());
 						
-						setCurrentSelectedRootNode(currentSelectedRootCase.getRmNode());
+						currentSelectedRootNode = currentSelectedRootCase.getRmNode();
 						currentSelectedRootNode.calculateExecutionTime();
 						resetGui();
 						transactionDrilldownPanel = new UsecasePanel(rootWindow, currentSelectedRootNode, processor);
@@ -207,13 +208,12 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return businessTransactionTable;
 	}
 	
-	private ActionListener jumpToMostExpensiveSubtransaction(RMNode currentSelectedRootNode) {
+	private ActionListener jumpToMostExpensiveSubtransaction() {
 		return new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (getCurrentSelectedRootNode() != null) {
-					RMNode mostExpensiveSubtransaction = transactionDrilldownPanel.findMostExpensiveSubtransaction(getCurrentSelectedRootNode());
+				if (currentSelectedRootNode != null) {
+					RMNode mostExpensiveSubtransaction = transactionDrilldownPanel.findMostExpensiveSubtransaction(currentSelectedRootNode);
 					transactionDrilldownPanel.selectTreeNode(mostExpensiveSubtransaction);
 				}
 			}
@@ -273,13 +273,5 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			nonUniqueReqIds.add(concreteEvent);
 			LOG.info("There are" + nonUniqueReqIds.size() + "non unique request IDs");
 		} 
-	}
-
-	public RMNode getCurrentSelectedRootNode() {
-		return currentSelectedRootNode;
-	}
-
-	public void setCurrentSelectedRootNode(RMNode currentSelectedRootNode) {
-		this.currentSelectedRootNode = currentSelectedRootNode;
 	}
 }
