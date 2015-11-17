@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Paint;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,6 +19,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -37,6 +38,13 @@ import de.ibm.issw.requestmetrics.util.ColorHelper;
 public class ChildNodeStatisticsDialog extends JDialog {
 	private static final int DIALOG_WIDTH = 1200;
 	private static final int DIALOG_HEIGHT = 900;
+	
+	private final JFreeChart totalTimeChart;
+	private final JFreeChart numberOfExecutionsChart;
+	private final DefaultPieDataset totalTimeDataset = new DefaultPieDataset();
+	private final DefaultPieDataset numberOfExecutionsDataset = new DefaultPieDataset();
+	
+	private String lastSelection;
 
 	public ChildNodeStatisticsDialog(JDialog rootWindow, RMRecord root, List<ChildNodeStatisticsEntry> entries, long numberOfChildren,
 			long totalTimeChildren, long totalZeroTimesChildren) {
@@ -45,12 +53,15 @@ public class ChildNodeStatisticsDialog extends JDialog {
 
 		final JPanel infoPanel = createInfoPanel(root, numberOfChildren, totalTimeChildren, totalZeroTimesChildren);
 
-		List<ChartPanel> charts = createStatisticCharts(entries);
+		initChartDatasets(entries);
+		totalTimeChart = createPieChart("Total Time", totalTimeDataset, entries);
+		numberOfExecutionsChart = createPieChart("Number Of Executions", numberOfExecutionsDataset, entries);
 		final JPanel chartsPanel = new JPanel(new GridLayout(1, 2));
-		chartsPanel.add(charts.get(0));
-		chartsPanel.add(charts.get(1));
+		chartsPanel.add(createChartPanel(totalTimeChart));
+		chartsPanel.add(createChartPanel(numberOfExecutionsChart));
 
-		final JTable table = new JTable(new ChildNodeStatisticsTableModel(entries));
+		final ChildNodeStatisticsTableModel model = new ChildNodeStatisticsTableModel(entries);
+		final JTable table = new JTable(model);
 		table.setDefaultRenderer(Object.class, new ChildNodeStatisticsTableCellRenderer());
 		table.setFillsViewportHeight(true);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -60,6 +71,18 @@ public class ChildNodeStatisticsDialog extends JDialog {
 		table.getColumnModel().getColumn(2).setMaxWidth(80);
 		table.getColumnModel().getColumn(3).setMaxWidth(80);
 		table.getColumnModel().getColumn(4).setMaxWidth(110);
+		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent event) {
+				// check if we are in an event sequence and only process the last one
+				if(!event.getValueIsAdjusting() && !table.getSelectionModel().isSelectionEmpty()) {
+					int row = table.getSelectedRow();
+					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
+						String key = (String)model.getValueAt(table.convertRowIndexToModel(row), 1);
+						explodeChartSection(key);
+					}
+				}
+			} 
+		});
 		final JScrollPane listScrollPane = new JScrollPane(table);
 
 		final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -147,11 +170,12 @@ public class ChildNodeStatisticsDialog extends JDialog {
 		return textField;
 	}
 	
-	private List<ChartPanel> createStatisticCharts(List<ChildNodeStatisticsEntry> entries) {
-		List<ChartPanel> charts = new ArrayList<ChartPanel>();
-		DefaultPieDataset totalTimeDataset = new DefaultPieDataset();
-		DefaultPieDataset numberOfExecutionsDataset = new DefaultPieDataset();
-
+	/**
+	 * Method to initialize and sort the pie datasets
+	 * 
+	 * @param entries	list of entries to fill the pie datasets from
+	 */
+	private void initChartDatasets(List<ChildNodeStatisticsEntry> entries) {
 		// sort the entries by total time descending to ensure deterministic chart colors
 		Collections.sort(entries, new TotalTimeComparator());
 		Collections.reverse(entries);
@@ -163,16 +187,9 @@ public class ChildNodeStatisticsDialog extends JDialog {
 		}
 		totalTimeDataset.sortByValues(SortOrder.ASCENDING);
 		numberOfExecutionsDataset.sortByValues(SortOrder.ASCENDING);
-
-		// create charts & add them to the list
-		charts.add(createPieChart("Total Time", totalTimeDataset, entries));
-		charts.add(createPieChart("Number Of Executions", numberOfExecutionsDataset, entries));
-
-		return charts;
 	}
-
-	private ChartPanel createPieChart(String title, DefaultPieDataset pieDataset,
-			List<ChildNodeStatisticsEntry> entries) {
+	
+	private JFreeChart createPieChart(String title, DefaultPieDataset pieDataset, List<ChildNodeStatisticsEntry> entries) {
 		JFreeChart pieChart = ChartFactory.createPieChart(title, pieDataset, false, true, false);
 
 		PiePlot piePlot = (PiePlot) pieChart.getPlot();
@@ -182,14 +199,17 @@ public class ChildNodeStatisticsDialog extends JDialog {
 		DrawingSupplier drawSupplier = piePlot.getDrawingSupplier();
 		for (ChildNodeStatisticsEntry childNodeStatisticsEntry : entries) {
 			if (childNodeStatisticsEntry.getChartColor().equals(Color.WHITE)) {
-				// case: default color -> get default chart color & convert to
-				// pastel color
+				// case: default color -> get default chart color & convert to pastel color
 				Paint actPaint = drawSupplier.getNextPaint();
 				Color actColor = ColorHelper.getPastelColor((Color) actPaint, Color.WHITE);
 				childNodeStatisticsEntry.setChartColor(actColor);
 			}
 			piePlot.setSectionPaint(childNodeStatisticsEntry.getComponent(), childNodeStatisticsEntry.getChartColor());
 		}
+		return pieChart;
+	}
+
+	private ChartPanel createChartPanel(JFreeChart pieChart) {
 		// set size
 		ChartPanel chartPanel = new ChartPanel(pieChart) {
 			@Override
@@ -203,5 +223,22 @@ public class ChildNodeStatisticsDialog extends JDialog {
 		chartPanel.setMouseWheelEnabled(true);
 		chartPanel.setVisible(true);
 		return chartPanel;
+	}
+	
+	/**
+	 * This method explodes the section for the given parameter key in both pie charts and inserts the section selected before
+	 * 
+	 * @param key	the key from the pie dataset section to explode
+	 */
+	private void explodeChartSection(String key) {
+		PiePlot piePlot = (PiePlot) totalTimeChart.getPlot();
+		if(lastSelection != null) piePlot.setExplodePercent(lastSelection, 0.0D);
+		piePlot.setExplodePercent(key, 0.2D);
+		
+		piePlot = (PiePlot) numberOfExecutionsChart.getPlot();
+		if(lastSelection != null) piePlot.setExplodePercent(lastSelection, 0.0D);
+		piePlot.setExplodePercent(key, 0.2D);
+		
+		lastSelection = key;
 	}
 }
