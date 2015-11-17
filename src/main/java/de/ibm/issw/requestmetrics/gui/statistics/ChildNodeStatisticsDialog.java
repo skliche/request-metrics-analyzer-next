@@ -104,32 +104,32 @@ public class ChildNodeStatisticsDialog extends JDialog {
 
 		// root id
 		JTextField rootIdField = createTextField(10, Long.toString(root.getCurrentCmp().getReqid()));
-		JLabel rootIdLabel = new JLabel("ID: ");
+		JLabel rootIdLabel = new JLabel("Request ID: ");
 		rootIdLabel.setLabelFor(rootIdField);
 		
 		// root name
 		JTextField rootNameField = createTextField(60, root.getDetailCmp());
-		JLabel rootNameLabel = new JLabel("Name: ");
+		JLabel rootNameLabel = new JLabel("Component Name: ");
 		rootNameLabel.setLabelFor(rootIdField);
 		
 		// elapsed time
-		JTextField elapsedTimeField = createTextField(10, Long.toString(root.getElapsedTime()));
+		JTextField elapsedTimeField = createTextField(10, Long.toString(root.getElapsedTime()) + " ms");
 		JLabel elapsedTimeLabel = new JLabel("Elapsed Time: ");
 		elapsedTimeLabel.setLabelFor(elapsedTimeField);
 
 		// effective time
-		JTextField effectiveTimeField = createTextField(10, Long.toString(root.getElapsedTime() - totalTimeChildren));
+		JTextField effectiveTimeField = createTextField(10, Long.toString(root.getElapsedTime() - totalTimeChildren) + " ms");
 		JLabel effectiveTimeLabel = new JLabel("Effective Time: ");
 		effectiveTimeLabel.setLabelFor(effectiveTimeField);
 
 		// number of children
 		JTextField numberOfChildrenField = createTextField(10, Long.toString(numberOfChildren));
-		JLabel numberOfChildrenLabel = new JLabel("# Children: ");
+		JLabel numberOfChildrenLabel = new JLabel("Total Children: ");
 		numberOfChildrenLabel.setLabelFor(numberOfChildrenField);
 		
 		// number of children with zero execution time
 		JTextField numberOfChildrenZeroTimeField = createTextField(10, Long.toString(totalZeroTimesChildren));
-		JLabel numberOfChildrenZeroTimeLabel = new JLabel("# Children zero time: ");
+		JLabel numberOfChildrenZeroTimeLabel = new JLabel("Children with zero time: ");
 		numberOfChildrenZeroTimeLabel.setLabelFor(numberOfChildrenZeroTimeField);
 		
 		// build the layout with four box layouts added to a flow layout
