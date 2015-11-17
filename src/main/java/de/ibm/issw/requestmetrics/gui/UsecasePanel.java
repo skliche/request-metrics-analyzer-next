@@ -199,25 +199,33 @@ public class UsecasePanel extends JPanel {
         }
     }
 	
+	@SuppressWarnings("unchecked")
 	public void selectTreeNode (RMNode rmNode) {
 		tree.clearSelection();
 		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
+		//1st case: rootNode is the most expensive node
 		if (rmNode.getData().getCurrentCmp().getReqid() == rootNode.rmnode.getData().getCurrentCmp().getReqid()) {
 			tree.setSelectionRow(0);
-			System.out.println("should work");
 		} else {
-			@SuppressWarnings("unchecked")
-			Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
-			while (subtransactions.hasMoreElements()) {
-				final UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
-				System.out.println("else + inner if clause");
-				if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
-					TreePath path = new TreePath(node.getPath());
-					tree.setSelectionPath(path);
-					tree.setSelectionRow(node.getLevel());
-					System.out.println("should select");
-					break;
-				}
+			searchNode(rmNode, rootNode);
+		}
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	private void searchNode (RMNode rmNode, AnalyzerTreeNode rootNode) {
+		Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
+		while (subtransactions.hasMoreElements()) {
+			UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
+			
+			if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
+				TreePath path = new TreePath(node.getPath());
+				tree.addSelectionPath(path);
+				tree.scrollPathToVisible(path);
+				break;
+			} else {
+				//if none of the children is the searched node, go search their children for the searched node
+				searchNode(rmNode, node);
 			}
 		}
 	}
@@ -230,7 +238,6 @@ public class UsecasePanel extends JPanel {
 				mostExpensiveSubtransaction = childNode;
 			findMostExpensiveSubtransaction(childNode);
 		}
-		System.out.println(currentNode.getData().getElapsedTime() + " // " + currentNode.getExecutionTime() + " // " + currentNode.getData().getCurrentCmp().getReqid());
 		return mostExpensiveSubtransaction;
 	}
 	
