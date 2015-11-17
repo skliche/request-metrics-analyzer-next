@@ -152,33 +152,35 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
-						table.setModel(new UsecaseTableModel(rootCases));
-						// the width is currently hard coded and could be gathered from data in future
-						table.getColumnModel().getColumn(0).setMinWidth(215); 
-						table.getColumnModel().getColumn(0).setMaxWidth(515); 
-						table.getColumnModel().getColumn(1).setMinWidth(160); 
-						table.getColumnModel().getColumn(1).setMaxWidth(160); 
-						table.getColumnModel().getColumn(2).setMinWidth(100); 
-						table.getColumnModel().getColumn(2).setMaxWidth(100); 
-						table.getColumnModel().getColumn(3).setMinWidth(140); 
-						table.getColumnModel().getColumn(3).setMaxWidth(140); 
-						table.getColumnModel().getColumn(4).setMinWidth(85); 
-						table.getColumnModel().getColumn(4).setMaxWidth(85); 
-						
-						// initially sort root cases by elapsed time descending
-						Collections.sort(rootCases, new ElapsedTimeComparator());
-						Collections.reverse(rootCases);
-						
-						// we write our own cell renderer for rendering the date values
-						TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
-							public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-								if( value instanceof Date) {
-									value = sdf.format(value);
+						if(rootCases != null && !rootCases.isEmpty()) {
+							table.setModel(new UsecaseTableModel(rootCases));
+							// the width is currently hard coded and could be gathered from data in future
+							table.getColumnModel().getColumn(0).setMinWidth(215); 
+							table.getColumnModel().getColumn(0).setMaxWidth(515); 
+							table.getColumnModel().getColumn(1).setMinWidth(160); 
+							table.getColumnModel().getColumn(1).setMaxWidth(160); 
+							table.getColumnModel().getColumn(2).setMinWidth(100); 
+							table.getColumnModel().getColumn(2).setMaxWidth(100); 
+							table.getColumnModel().getColumn(3).setMinWidth(140); 
+							table.getColumnModel().getColumn(3).setMaxWidth(140); 
+							table.getColumnModel().getColumn(4).setMinWidth(85); 
+							table.getColumnModel().getColumn(4).setMaxWidth(85); 
+							
+							// initially sort root cases by elapsed time descending
+							Collections.sort(rootCases, new ElapsedTimeComparator());
+							Collections.reverse(rootCases);
+							
+							// we write our own cell renderer for rendering the date values
+							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
+								public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+									if( value instanceof Date) {
+										value = sdf.format(value);
+									}
+									return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 								}
-								return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-							}
-						};
-						table.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+							};
+							table.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+						}
 					}
 				}).start();
 
