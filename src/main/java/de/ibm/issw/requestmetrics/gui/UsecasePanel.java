@@ -35,9 +35,11 @@ public class UsecasePanel extends JPanel {
 	private TreePath currentTreePath;
 	private JTree tree;
 	private JDialog rootWindow;
+	private RMNode mostExpensiveSubtransaction;
 	
 	public UsecasePanel(JDialog rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
 		this.rootWindow = rootWindow;
+		mostExpensiveSubtransaction = null;
 		
 		setLayout(new BorderLayout());
 		
@@ -196,6 +198,48 @@ public class UsecasePanel extends JPanel {
 	        }
         }
     }
+	
+	@SuppressWarnings("unchecked")
+	public void selectTreeNode (RMNode rmNode) {
+		tree.clearSelection();
+		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
+		//1st case: rootNode is the most expensive node
+		if (rmNode.getData().getCurrentCmp().getReqid() == rootNode.rmnode.getData().getCurrentCmp().getReqid()) {
+			tree.setSelectionRow(0);
+		} else {
+			searchNode(rmNode, rootNode);
+		}
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	private void searchNode (RMNode rmNode, AnalyzerTreeNode rootNode) {
+		Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
+		while (subtransactions.hasMoreElements()) {
+			UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
+			
+			if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
+				TreePath path = new TreePath(node.getPath());
+				tree.addSelectionPath(path);
+				tree.scrollPathToVisible(path);
+				break;
+			} else {
+				//if none of the children is the searched node, go search their children for the searched node
+				searchNode(rmNode, node);
+			}
+		}
+	}
+	
+	public RMNode findMostExpensiveSubtransaction (RMNode currentNode) {
+		if(mostExpensiveSubtransaction == null) mostExpensiveSubtransaction = currentNode;
+		
+		for (RMNode childNode : currentNode.getChildren()) {
+			if (childNode.getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
+				mostExpensiveSubtransaction = childNode;
+			findMostExpensiveSubtransaction(childNode);
+		}
+		return mostExpensiveSubtransaction;
+	}
 	
 	/**
 	 * We create our own implementation of the DefaultMutableTreeNode 
