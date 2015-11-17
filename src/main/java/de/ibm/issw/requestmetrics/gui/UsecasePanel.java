@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.swing.JDialog;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -34,12 +33,18 @@ public class UsecasePanel extends JPanel {
 	private AnalyzerTreeNode selectedTreeNode;
 	private TreePath currentTreePath;
 	private JTree tree;
-	private JDialog rootWindow;
-	private RMNode mostExpensiveSubtransaction;
+	private RequestMetricsGui rootWindow;
+	private RMNode highestExecTimeNode;
+	private RMNode mostDirectChildrenNode;
+	private long mostDirectChildren;
 	
-	public UsecasePanel(JDialog rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
+	public UsecasePanel(RequestMetricsGui rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
 		this.rootWindow = rootWindow;
-		mostExpensiveSubtransaction = null;
+		
+		mostDirectChildren = useCaseRootNode.getChildren().size();
+		highestExecTimeNode = useCaseRootNode;
+		mostDirectChildrenNode = useCaseRootNode;
+		initializeImportantNodes(useCaseRootNode);
 		
 		setLayout(new BorderLayout());
 		
@@ -64,8 +69,9 @@ public class UsecasePanel extends JPanel {
 	        public void mousePressed(MouseEvent event) {
 	            currentTreePath = tree.getPathForLocation(event.getPoint().x, event.getPoint().y);
 	            if(currentTreePath != null) {
-	            	selectedTreeNode = (AnalyzerTreeNode) currentTreePath.getLastPathComponent();
+	            	treeNodeSelected((AnalyzerTreeNode) currentTreePath.getLastPathComponent());
 	            } else {
+	            	rootWindow.getCalcStatisticsButton().setEnabled(false);
 	            	selectedTreeNode = null;
 	            }
 	            super.mousePressed(event);
@@ -100,39 +106,7 @@ public class UsecasePanel extends JPanel {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if(selectedTreeNode != null) {
-					long totalTimeChildren = 0;
-					long totalZeroTimesChildren = 0;
-					final Map<String, ChildNodeStatisticsEntry> stats = new HashMap<String, ChildNodeStatisticsEntry>();
-					
-					@SuppressWarnings("unchecked")
-					Enumeration<AnalyzerTreeNode> childNodes = selectedTreeNode.children();
-					while (childNodes.hasMoreElements()) {
-						final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
-						
-						final String detail = node.getRmNode().rmData.getDetailCmp();
-						final long elapsedTime = node.getRmNode().rmData.getElapsedTime();
-						totalTimeChildren += elapsedTime;
-						if(elapsedTime == 0) totalZeroTimesChildren+=1;
-					
-						if(stats.containsKey(detail)) {
-							final ChildNodeStatisticsEntry entry = stats.get(detail);
-							entry.setTotalTime(entry.getTotalTime() + elapsedTime);
-							entry.setNumberOfExecutions(entry.getNumberOfExecutions() + 1);
-						} else {
-							final ChildNodeStatisticsEntry entry = new ChildNodeStatisticsEntry();
-							entry.setComponent(detail);
-							entry.setTotalTime(elapsedTime);
-							entry.setNumberOfExecutions(1l);
-							entry.setNumberOfChildren(node.getChildCount());
-							stats.put(detail, entry);
-						}
-					}
-					
-					final List<ChildNodeStatisticsEntry> entries = new ArrayList<ChildNodeStatisticsEntry>(stats.values());
-					final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, selectedTreeNode.getRmNode().getData(), entries, selectedTreeNode.getChildCount(), totalTimeChildren, totalZeroTimesChildren);
-					panel.setVisible(true);
-				}
+				calculateAndOpenStatisticsDialog(selectedTreeNode);
 			}
 		};
 	}
@@ -199,12 +173,54 @@ public class UsecasePanel extends JPanel {
         }
     }
 	
+	private void treeNodeSelected(AnalyzerTreeNode treeNode) {
+		selectedTreeNode = treeNode;
+    	rootWindow.getCalcStatisticsButton().setEnabled(true);
+	}
+	
+	public void calculateAndOpenStatisticsDialog(AnalyzerTreeNode treeNode) {
+		if(treeNode != null) {
+			long totalTimeChildren = 0;
+			long totalZeroTimesChildren = 0;
+			final Map<String, ChildNodeStatisticsEntry> stats = new HashMap<String, ChildNodeStatisticsEntry>();
+			
+			@SuppressWarnings("unchecked")
+			Enumeration<AnalyzerTreeNode> childNodes = treeNode.children();
+			while (childNodes.hasMoreElements()) {
+				final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
+				
+				final String detail = node.getRmNode().rmData.getDetailCmp();
+				final long elapsedTime = node.getRmNode().rmData.getElapsedTime();
+				totalTimeChildren += elapsedTime;
+				if(elapsedTime == 0) totalZeroTimesChildren+=1;
+				
+				if(stats.containsKey(detail)) {
+					final ChildNodeStatisticsEntry entry = stats.get(detail);
+					entry.setTotalTime(entry.getTotalTime() + elapsedTime);
+					entry.setNumberOfExecutions(entry.getNumberOfExecutions() + 1);
+				} else {
+					final ChildNodeStatisticsEntry entry = new ChildNodeStatisticsEntry();
+					entry.setComponent(detail);
+					entry.setTotalTime(elapsedTime);
+					entry.setNumberOfExecutions(1l);
+					entry.setNumberOfChildren(node.getChildCount());
+					stats.put(detail, entry);
+				}
+			}
+			
+			final List<ChildNodeStatisticsEntry> entries = new ArrayList<ChildNodeStatisticsEntry>(stats.values());
+			final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, treeNode.getRmNode().getData(), entries, treeNode.getChildCount(), totalTimeChildren, totalZeroTimesChildren);
+			panel.setVisible(true);
+		}
+	}
+	
 	public void selectTreeNode (RMNode rmNode) {
 		tree.clearSelection();
 		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
 		//1st case: rootNode is the most expensive node
 		if (rmNode.getData().getCurrentCmp().getReqid() == rootNode.rmnode.getData().getCurrentCmp().getReqid()) {
 			tree.setSelectionRow(0);
+			treeNodeSelected(rootNode);
 		} else {
 			searchNode(rmNode, rootNode);
 		}
@@ -218,9 +234,10 @@ public class UsecasePanel extends JPanel {
 			UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
 			
 			if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
-				TreePath path = new TreePath(node.getPath());
-				tree.addSelectionPath(path);
-				tree.scrollPathToVisible(path);
+				currentTreePath = new TreePath(node.getPath());
+				tree.addSelectionPath(currentTreePath);
+				tree.scrollPathToVisible(currentTreePath);
+				treeNodeSelected((AnalyzerTreeNode) currentTreePath.getLastPathComponent());
 				break;
 			} else {
 				//if none of the children is the searched node, go search their children for the searched node
@@ -229,17 +246,37 @@ public class UsecasePanel extends JPanel {
 		}
 	}
 	
-	public RMNode findMostExpensiveSubtransaction (RMNode currentNode) {
-		if(mostExpensiveSubtransaction == null) mostExpensiveSubtransaction = currentNode;
-		
+	private void initializeImportantNodes(RMNode currentNode) {
 		for (RMNode childNode : currentNode.getChildren()) {
-			if (childNode.getExecutionTime() > mostExpensiveSubtransaction.getExecutionTime()) 
-				mostExpensiveSubtransaction = childNode;
-			findMostExpensiveSubtransaction(childNode);
+			// check if execution time of current child node is highest
+			if (childNode.getExecutionTime() > highestExecTimeNode.getExecutionTime()) 
+				highestExecTimeNode = childNode;
+
+			// check if current child node has most direct children 
+			if (mostDirectChildren < childNode.getChildren().size()) {
+				mostDirectChildren = childNode.getChildren().size();
+				mostDirectChildrenNode = childNode;
+			}
+			
+			initializeImportantNodes(childNode);
 		}
-		return mostExpensiveSubtransaction;
 	}
 	
+	public AnalyzerTreeNode getSelectedTreeNode() {
+		return selectedTreeNode;
+	}
+
+	public RMNode getHighestExecTimeNode() {
+		return highestExecTimeNode;
+	}
+
+	public RMNode getMostDirectChildrenNode() {
+		return mostDirectChildrenNode;
+	}
+
+
+
+
 	/**
 	 * We create our own implementation of the DefaultMutableTreeNode 
 	 * since we need the ability to customize the behaviour 

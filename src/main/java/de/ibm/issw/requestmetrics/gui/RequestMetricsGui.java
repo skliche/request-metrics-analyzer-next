@@ -54,13 +54,15 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
 	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
+	private final JButton highestExecTimeButton = new JButton("Highest Execution Time");
+	private final JButton mostDirectChildrenTimeButton = new JButton("Most Direct Children");
+	private final JButton calcStatisticsButton = new JButton("Open Statistics");
 	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private RmProcessor processor;
 	private static JTable table;
 	private ProgressBarDialog fileProcessingDialog;
-	private JButton jumpToMostExpSubtransButton;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
 	
@@ -90,11 +92,18 @@ public class RequestMetricsGui extends JDialog implements Observer {
 
 		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
 		drillDownToolBar.setFloatable(false);
-		jumpToMostExpSubtransButton = new JButton("Highest Execution Time");
-		jumpToMostExpSubtransButton.setToolTipText("Jumps to the subtransaction with the highest execution time.");
-		jumpToMostExpSubtransButton.setEnabled(false);
-		drillDownToolBar.add(jumpToMostExpSubtransButton);
-		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction());
+		highestExecTimeButton.setToolTipText("Jump to the subtransaction with the highest execution time of all subtransactions.");
+		highestExecTimeButton.setEnabled(false);
+		highestExecTimeButton.addActionListener(selectHighestExecTimeNode());
+		mostDirectChildrenTimeButton.setToolTipText("Jump to the subtransaction with the highest number of direct children.");
+		mostDirectChildrenTimeButton.setEnabled(false);
+		mostDirectChildrenTimeButton.addActionListener(selectMostDirectChildrenNode());
+		calcStatisticsButton.setToolTipText("Calculate statistics for selected node and open the result in a new dialog window.");
+		calcStatisticsButton.setEnabled(false);
+		calcStatisticsButton.addActionListener(openStatistics());
+		drillDownToolBar.add(highestExecTimeButton);
+		drillDownToolBar.add(mostDirectChildrenTimeButton);
+		drillDownToolBar.add(calcStatisticsButton);
 		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
@@ -176,7 +185,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		businessTransactionTable.setAutoCreateRowSorter(true);
 		
 		// reference to this window 
-		final JDialog rootWindow = this;
+		final RequestMetricsGui rootWindow = this;
 		
 		// add selection listener to select the use cases
 		businessTransactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -186,7 +195,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 					int row = businessTransactionTable.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
 						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(businessTransactionTable.convertRowIndexToModel(row));
-						LOG.info("user selected use case " + currentSelectedRootCase.getRmNode().toString());
+						LOG.fine("user selected use case " + currentSelectedRootCase.getRmNode().toString());
 						
 						currentSelectedRootNode = currentSelectedRootCase.getRmNode();
 						currentSelectedRootNode.calculateExecutionTime();
@@ -195,8 +204,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
-						jumpToMostExpSubtransButton.setEnabled(true);
-						jumpToMostExpSubtransButton.setRolloverEnabled(true);
+						highestExecTimeButton.setEnabled(true);
+						mostDirectChildrenTimeButton.setEnabled(true);
 						
 						treeInternalFrame.setVisible(true);
 						repaintGui();
@@ -208,14 +217,32 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return businessTransactionTable;
 	}
 	
-	private ActionListener jumpToMostExpensiveSubtransaction() {
+	private ActionListener selectHighestExecTimeNode() {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (currentSelectedRootNode != null) {
-					RMNode mostExpensiveSubtransaction = transactionDrilldownPanel.findMostExpensiveSubtransaction(currentSelectedRootNode);
-					transactionDrilldownPanel.selectTreeNode(mostExpensiveSubtransaction);
-				}
+				if (currentSelectedRootNode != null)
+					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getHighestExecTimeNode());
+			}
+		};
+	}
+
+	private ActionListener selectMostDirectChildrenNode() {
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (currentSelectedRootNode != null)
+					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getMostDirectChildrenNode());
+			}
+		};
+	}
+
+	private ActionListener openStatistics() {
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (transactionDrilldownPanel != null && transactionDrilldownPanel.getSelectedTreeNode() != null)
+					transactionDrilldownPanel.calculateAndOpenStatisticsDialog(transactionDrilldownPanel.getSelectedTreeNode());;
 			}
 		};
 	}
@@ -225,7 +252,9 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		treeInternalFrame.setTitle("Transaction Drilldown");
 		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
 		treeInternalFrame.setVisible(true);
-		jumpToMostExpSubtransButton.setEnabled(false);
+		highestExecTimeButton.setEnabled(false);
+		mostDirectChildrenTimeButton.setEnabled(false);
+		calcStatisticsButton.setEnabled(false);
 	}
 	
 	private void repaintGui() {
@@ -234,6 +263,10 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
+	public JButton getCalcStatisticsButton() {
+		return calcStatisticsButton;
+	}
+
 	@Override
 	public void update(Observable o, Object event) {
 		if(event instanceof ParsingFileHasFinishedEvent) {
