@@ -36,12 +36,10 @@ public class UsecasePanel extends JPanel {
 	private RequestMetricsGui rootWindow;
 	private RMNode highestExecTimeNode;
 	private RMNode mostDirectChildrenNode;
-	private long mostDirectChildren;
 	
 	public UsecasePanel(RequestMetricsGui rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
 		this.rootWindow = rootWindow;
 		
-		mostDirectChildren = useCaseRootNode.getChildren().size();
 		highestExecTimeNode = useCaseRootNode;
 		mostDirectChildrenNode = useCaseRootNode;
 		initializeImportantNodes(useCaseRootNode);
@@ -253,10 +251,8 @@ public class UsecasePanel extends JPanel {
 				highestExecTimeNode = childNode;
 
 			// check if current child node has most direct children 
-			if (mostDirectChildren < childNode.getChildren().size()) {
-				mostDirectChildren = childNode.getChildren().size();
+			if (mostDirectChildrenNode.getChildren().size() < childNode.getChildren().size())
 				mostDirectChildrenNode = childNode;
-			}
 			
 			initializeImportantNodes(childNode);
 		}
