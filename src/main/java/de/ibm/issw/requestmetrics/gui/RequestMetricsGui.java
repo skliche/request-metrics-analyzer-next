@@ -115,7 +115,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		JFrame mainFrame = new JFrame("RM Records Log File Analysis Results");
 		final JMenuBar menuBar = buildMenubar(mainFrame, processor);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		mainFrame.setSize(900, 800);
+		mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
 		mainFrame.getContentPane().add(menuBar, BorderLayout.NORTH);
 		mainFrame.getContentPane().add(splitPane, BorderLayout.CENTER);
@@ -156,9 +156,14 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						// the width is currently hard coded and could be gathered from data in future
 						table.getColumnModel().getColumn(0).setMinWidth(215); 
 						table.getColumnModel().getColumn(0).setMaxWidth(515); 
-						table.getColumnModel().getColumn(1).setMaxWidth(85); 
-						table.getColumnModel().getColumn(2).setMaxWidth(85); 
-						table.getColumnModel().getColumn(3).setMaxWidth(85); 
+						table.getColumnModel().getColumn(1).setMinWidth(160); 
+						table.getColumnModel().getColumn(1).setMaxWidth(160); 
+						table.getColumnModel().getColumn(2).setMinWidth(100); 
+						table.getColumnModel().getColumn(2).setMaxWidth(100); 
+						table.getColumnModel().getColumn(3).setMinWidth(140); 
+						table.getColumnModel().getColumn(3).setMaxWidth(140); 
+						table.getColumnModel().getColumn(4).setMinWidth(85); 
+						table.getColumnModel().getColumn(4).setMaxWidth(85); 
 						
 						// initially sort root cases by elapsed time descending
 						Collections.sort(rootCases, new ElapsedTimeComparator());
@@ -173,7 +178,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 								return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 							}
 						};
-						table.getColumnModel().getColumn(0).setCellRenderer(tableCellRenderer);
+						table.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
 					}
 				}).start();
 

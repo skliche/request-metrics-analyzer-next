@@ -10,7 +10,7 @@ import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class UsecaseTableModel extends AbstractTableModel {
-	private static final String[] columnNames = {"Timestamp", "Elapsed Time", "Type", "Request ID", "Details"};
+	private static final String[] columnNames = {"File", "Timestamp", "Elapsed Time", "Type", "Request ID", "Details"};
 
 	private List<RmRootCase> useCases;
 		
@@ -38,10 +38,11 @@ public class UsecaseTableModel extends AbstractTableModel {
 		RMNode node = useCases.get(0).getRmNode();
 		RMRecord record = node.getData();
 		switch (columnIndex) {
-			case 0: return record.getLogTimeStamp().getClass();
-			case 1:	return Long.class;
-			case 2: return record.getTypeCmp().getClass();
-			case 3: return Long.class;
+			case 0: return String.class;
+			case 1: return record.getLogTimeStamp().getClass();
+			case 2:	return Long.class;
+			case 3: return record.getTypeCmp().getClass();
+			case 4: return Long.class;
 			default: return record.getDetailCmp().getClass();
 		}
 	}
@@ -52,10 +53,11 @@ public class UsecaseTableModel extends AbstractTableModel {
 		RMRecord record = node.getData();
 		
 		switch (columnIndex) {
-			case 0: return record.getLogTimeStamp();
-			case 1:	return record.getElapsedTime();
-			case 2: return record.getTypeCmp();
-			case 3: return record.getCurrentCmp().getReqid();
+			case 0: return record.getLogSource();
+			case 1: return record.getLogTimeStamp();
+			case 2:	return record.getElapsedTime();
+			case 3: return record.getTypeCmp();
+			case 4: return record.getCurrentCmp().getReqid();
 			default: return record.getDetailCmp();
 		}
 	}
