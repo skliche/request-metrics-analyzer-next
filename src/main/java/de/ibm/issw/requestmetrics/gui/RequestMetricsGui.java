@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Observable;
@@ -34,12 +35,13 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
-import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.NonUniqueRequestIdEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
+import de.ibm.issw.requestmetrics.gui.comparator.ElapsedTimeComparator;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
@@ -149,13 +151,18 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
 						
 						// remove the old model
-						table.setModel(new UsecaseTableModel(processor.getRootCases()));
+						List<RmRootCase> rootCases = processor.getRootCases();
+						table.setModel(new UsecaseTableModel(rootCases));
 						// the width is currently hard coded and could be gathered from data in future
 						table.getColumnModel().getColumn(0).setMinWidth(215); 
 						table.getColumnModel().getColumn(0).setMaxWidth(515); 
 						table.getColumnModel().getColumn(1).setMaxWidth(85); 
 						table.getColumnModel().getColumn(2).setMaxWidth(85); 
 						table.getColumnModel().getColumn(3).setMaxWidth(85); 
+						
+						// initially sort root cases by elapsed time descending
+						Collections.sort(rootCases, new ElapsedTimeComparator());
+						Collections.reverse(rootCases);
 						
 						// we write our own cell renderer for rendering the date values
 						TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {

@@ -30,7 +30,7 @@ import org.jfree.chart.plot.PiePlot;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.util.SortOrder;
 
-import de.ibm.issw.requestmetrics.gui.statistics.comparator.TotalTimeComparator;
+import de.ibm.issw.requestmetrics.gui.comparator.TotalTimeComparator;
 import de.ibm.issw.requestmetrics.model.RMRecord;
 import de.ibm.issw.requestmetrics.util.ColorHelper;
 

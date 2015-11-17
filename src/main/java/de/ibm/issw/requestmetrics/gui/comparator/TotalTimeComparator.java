@@ -1,4 +1,4 @@
-package de.ibm.issw.requestmetrics.gui.statistics.comparator;
+package de.ibm.issw.requestmetrics.gui.comparator;
 
 import java.util.Comparator;
 
