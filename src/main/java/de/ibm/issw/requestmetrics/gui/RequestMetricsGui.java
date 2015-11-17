@@ -23,7 +23,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
@@ -63,6 +62,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private ProgressBarDialog fileProcessingDialog;
 	private JButton jumpToMostExpSubtransButton;
 	private UsecasePanel transactionDrilldownPanel;
+	private RMNode currentSelectedRootNode;
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -92,9 +92,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		drillDownToolBar.setFloatable(false);
 		jumpToMostExpSubtransButton = new JButton("Jump to most expensive subtransaction");
 		jumpToMostExpSubtransButton.setEnabled(false);
-		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction(null));
 		drillDownToolBar.add(jumpToMostExpSubtransButton);
-		
+		jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction(getCurrentSelectedRootNode()));
 		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
@@ -188,15 +187,16 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(businessTransactionTable.convertRowIndexToModel(row));
 						LOG.info("user selected use case " + currentSelectedRootCase.getRmNode().toString());
 						
-						final RMNode rmRecRoot = currentSelectedRootCase.getRmNode();
-						rmRecRoot.calculateExecutionTime();
+						setCurrentSelectedRootNode(currentSelectedRootCase.getRmNode());
+						currentSelectedRootNode.calculateExecutionTime();
 						resetGui();
-						transactionDrilldownPanel = new UsecasePanel(rootWindow, rmRecRoot, processor);
+						transactionDrilldownPanel = new UsecasePanel(rootWindow, currentSelectedRootNode, processor);
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
+						
 						jumpToMostExpSubtransButton.setEnabled(true);
 						jumpToMostExpSubtransButton.setRolloverEnabled(true);
-						jumpToMostExpSubtransButton.addActionListener(jumpToMostExpensiveSubtransaction(rmRecRoot));
+						
 						treeInternalFrame.setVisible(true);
 						repaintGui();
 					}
@@ -206,13 +206,14 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		
 		return businessTransactionTable;
 	}
-	 ActionListener jumpToMostExpensiveSubtransaction(final RMNode currentlySelectedRootNode) {
+	
+	private ActionListener jumpToMostExpensiveSubtransaction(RMNode currentSelectedRootNode) {
 		return new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!(currentlySelectedRootNode == null)) {
-					RMNode mostExpensiveSubtransaction = UsecasePanel.findMostExpensiveSubtransaction(currentlySelectedRootNode);
+				if (getCurrentSelectedRootNode() != null) {
+					RMNode mostExpensiveSubtransaction = transactionDrilldownPanel.findMostExpensiveSubtransaction(getCurrentSelectedRootNode());
 					transactionDrilldownPanel.selectTreeNode(mostExpensiveSubtransaction);
 				}
 			}
@@ -272,5 +273,13 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			nonUniqueReqIds.add(concreteEvent);
 			LOG.info("There are" + nonUniqueReqIds.size() + "non unique request IDs");
 		} 
+	}
+
+	public RMNode getCurrentSelectedRootNode() {
+		return currentSelectedRootNode;
+	}
+
+	public void setCurrentSelectedRootNode(RMNode currentSelectedRootNode) {
+		this.currentSelectedRootNode = currentSelectedRootNode;
 	}
 }
