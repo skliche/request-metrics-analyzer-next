@@ -199,7 +199,6 @@ public class UsecasePanel extends JPanel {
         }
     }
 	
-	@SuppressWarnings("unchecked")
 	public void selectTreeNode (RMNode rmNode) {
 		tree.clearSelection();
 		AnalyzerTreeNode rootNode = (AnalyzerTreeNode) tree.getModel().getRoot();
