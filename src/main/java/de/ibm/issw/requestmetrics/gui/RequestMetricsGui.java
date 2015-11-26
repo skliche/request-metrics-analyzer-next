@@ -4,9 +4,14 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FileDialog;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,10 +21,14 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -29,10 +38,12 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
@@ -67,6 +78,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private ProgressBarDialog fileProcessingDialog;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
+	private JFormattedTextField elapsedTimeFilterField = new JFormattedTextField(NumberFormat.getIntegerInstance());
+	private JFormattedTextField detailFilterField = new JFormattedTextField("Search Details...");
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -85,13 +98,26 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
 
+		JToolBar rootCaseToolBar = new JToolBar();
+		rootCaseToolBar.setLayout(new FlowLayout());
+		listInternalFrame.add(rootCaseToolBar, "North");
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
-		
+						
 		JToolBar drillDownToolBar = new JToolBar();
 		treeInternalFrame.getContentPane().add(drillDownToolBar, "North");
 		treeInternalFrame.setVisible(true);
 
+		JLabel elapsedTimeFilterLabel = new JLabel("Show Elapsed Time > ");
+		elapsedTimeFilterField.setColumns(5);
+		
+		rootCaseToolBar.setPreferredSize(new Dimension(listInternalFrame.getWidth(), 35));
+		rootCaseToolBar.setFloatable(false);
+		rootCaseToolBar.add(elapsedTimeFilterLabel);
+		rootCaseToolBar.add(elapsedTimeFilterField);
+		rootCaseToolBar.addSeparator();
+		rootCaseToolBar.add(detailFilterField);
+		
 		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
 		drillDownToolBar.setFloatable(false);
 		highestExecTimeButton.setToolTipText("Jump to the subtransaction with the highest execution time of all subtransactions.");
