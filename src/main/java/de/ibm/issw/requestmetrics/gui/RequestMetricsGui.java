@@ -179,7 +179,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
 						if(rootCases != null && !rootCases.isEmpty()) {
-							table.setModel(new UsecaseTableModel(rootCases));
+							final UsecaseTableModel rootCaseModel = new UsecaseTableModel(rootCases);
+							table.setModel(rootCaseModel);
 							// the width is currently hard coded and could be gathered from data in future
 							table.getColumnModel().getColumn(0).setMinWidth(215); 
 							table.getColumnModel().getColumn(0).setMaxWidth(515); 
@@ -195,6 +196,35 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							// initially sort root cases by elapsed time descending
 							Collections.sort(rootCases, new ElapsedTimeComparator());
 							Collections.reverse(rootCases);
+							
+							elapsedTimeFilterField.addKeyListener(new KeyAdapter() {
+								public void keyReleased(KeyEvent evt) {
+									if (evt != null) {
+										try {
+											elapsedTimeFilterField.commitEdit();
+										} catch (ParseException e) {
+											return;
+										}
+										final Long userInput = (Long) elapsedTimeFilterField.getValue();
+										System.out.println(userInput);
+										RowFilter<UsecaseTableModel, Integer> elapsedTimeFilter = new RowFilter<UsecaseTableModel, Integer>(){
+											
+											@Override
+											public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Integer> entry) {
+												Long elapsedTime = (Long) rootCaseModel.getValueAt(entry.getIdentifier(), 2);
+												if (elapsedTime >= userInput) {
+													return true;
+												} else {
+													return false;
+												}
+											}
+										};
+										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
+										table.setRowSorter(sorter);
+										sorter.setRowFilter(elapsedTimeFilter);
+									}
+								}
+							});
 							
 							// we write our own cell renderer for rendering the date values
 							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
