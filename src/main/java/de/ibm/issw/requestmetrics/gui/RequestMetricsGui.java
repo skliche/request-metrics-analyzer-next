@@ -7,6 +7,8 @@ import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -21,9 +23,8 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -78,8 +79,10 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private ProgressBarDialog fileProcessingDialog;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
-	private JFormattedTextField elapsedTimeFilterField = new JFormattedTextField(NumberFormat.getIntegerInstance());
-	private JFormattedTextField detailFilterField = new JFormattedTextField("Search Details...");
+	private final JFormattedTextField elapsedTimeFilterField = new JFormattedTextField(NumberFormat.getIntegerInstance());
+	private final JFormattedTextField detailFilterField = new JFormattedTextField();
+	private final JCheckBox filterTypeEJB = new JCheckBox("EJB");
+	private final JCheckBox filterTypeServletFilter = new JCheckBox("Servlet Filter");
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -108,14 +111,20 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		treeInternalFrame.getContentPane().add(drillDownToolBar, "North");
 		treeInternalFrame.setVisible(true);
 
-		JLabel elapsedTimeFilterLabel = new JLabel("Show Elapsed Time > ");
+		final JLabel elapsedTimeFilterLabel = new JLabel("Show Elapsed Time > ");
 		elapsedTimeFilterField.setColumns(5);
+		
+		final JLabel detailFilterLabel = new JLabel("Search in Details: ");
+		detailFilterField.setColumns(7);
+		
 		
 		rootCaseToolBar.setPreferredSize(new Dimension(listInternalFrame.getWidth(), 35));
 		rootCaseToolBar.setFloatable(false);
+		rootCaseToolBar.add(filterTypeEJB);
+		rootCaseToolBar.add(filterTypeServletFilter);
 		rootCaseToolBar.add(elapsedTimeFilterLabel);
 		rootCaseToolBar.add(elapsedTimeFilterField);
-		rootCaseToolBar.addSeparator();
+		rootCaseToolBar.add(detailFilterLabel);
 		rootCaseToolBar.add(detailFilterField);
 		
 		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
@@ -197,17 +206,45 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							Collections.sort(rootCases, new ElapsedTimeComparator());
 							Collections.reverse(rootCases);
 							
+							//TODO: currently, only one filter can be applied
+							
+							ItemListener checkBoxListener = new ItemListener(){
+
+								@Override
+								public void itemStateChanged(ItemEvent e) {
+									Object source = e.getItemSelectable();
+									TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
+									table.setRowSorter(sorter);
+									
+									if (e.getStateChange() == ItemEvent.SELECTED) {
+										if (source == filterTypeEJB) {
+											sorter.setRowFilter(RowFilter.regexFilter("EJB"));
+										} else if (source == filterTypeServletFilter) {
+											sorter.setRowFilter(RowFilter.regexFilter("Servlet Filter"));
+										}
+										
+									} else if (e.getStateChange() == ItemEvent.DESELECTED) {
+										table.setRowSorter(null);
+									}
+								}
+								
+							};
+							filterTypeEJB.addItemListener(checkBoxListener);
+							filterTypeServletFilter.addItemListener(checkBoxListener);
+							
+							
 							elapsedTimeFilterField.addKeyListener(new KeyAdapter() {
 								public void keyReleased(KeyEvent evt) {
 									if (evt != null) {
 										try {
 											elapsedTimeFilterField.commitEdit();
 										} catch (ParseException e) {
-											return;
+											e.printStackTrace();
 										}
+										//TODO: if the field contains no value (e.g. when it is deleted), userInput should be treated as 0, so no entry is filtered
 										final Long userInput = (Long) elapsedTimeFilterField.getValue();
-										System.out.println(userInput);
-										RowFilter<UsecaseTableModel, Integer> elapsedTimeFilter = new RowFilter<UsecaseTableModel, Integer>(){
+										
+										RowFilter<UsecaseTableModel, Integer> filterElapsedTime = new RowFilter<UsecaseTableModel, Integer>(){
 											
 											@Override
 											public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Integer> entry) {
@@ -221,7 +258,22 @@ public class RequestMetricsGui extends JDialog implements Observer {
 										};
 										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
 										table.setRowSorter(sorter);
-										sorter.setRowFilter(elapsedTimeFilter);
+										sorter.setRowFilter(filterElapsedTime);
+									}
+								}
+							});
+							
+							detailFilterField.addKeyListener(new KeyAdapter() {
+								public void keyReleased(KeyEvent evt) {
+									if (evt != null) {
+										try {
+											detailFilterField.commitEdit();
+										} catch (ParseException e) {
+											e.printStackTrace();
+										}
+										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
+										table.setRowSorter(sorter);
+										sorter.setRowFilter(RowFilter.regexFilter(detailFilterField.getText()));
 									}
 								}
 							});
