@@ -233,32 +233,33 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							filterTypeServletFilter.addItemListener(checkBoxListener);
 							
 							
+							//TODO: if the field contains no value (e.g. when it is deleted), userInput should be treated as 0, so no entry is filtered
 							elapsedTimeFilterField.addKeyListener(new KeyAdapter() {
 								public void keyReleased(KeyEvent evt) {
 									if (evt != null) {
-										try {
-											elapsedTimeFilterField.commitEdit();
-										} catch (ParseException e) {
-											e.printStackTrace();
-										}
-										//TODO: if the field contains no value (e.g. when it is deleted), userInput should be treated as 0, so no entry is filtered
-										final Long userInput = (Long) elapsedTimeFilterField.getValue();
-										
-										RowFilter<UsecaseTableModel, Integer> filterElapsedTime = new RowFilter<UsecaseTableModel, Integer>(){
-											
-											@Override
-											public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Integer> entry) {
-												Long elapsedTime = (Long) rootCaseModel.getValueAt(entry.getIdentifier(), 2);
-												if (elapsedTime >= userInput) {
-													return true;
-												} else {
-													return false;
-												}
-											}
-										};
 										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
 										table.setRowSorter(sorter);
-										sorter.setRowFilter(filterElapsedTime);
+										try {
+											elapsedTimeFilterField.commitEdit();
+											final Long userInput = (Long) elapsedTimeFilterField.getValue();
+											
+											RowFilter<UsecaseTableModel, Integer> filterElapsedTime = new RowFilter<UsecaseTableModel, Integer>(){
+												
+												@Override
+												public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Integer> entry) {
+													Long elapsedTime = (Long) rootCaseModel.getValueAt(entry.getIdentifier(), 2);
+													if (elapsedTime >= userInput || elapsedTimeFilterField.getValue().equals(null)) {
+														return true;
+													} else {
+														return false;
+													}
+												}
+											};
+											sorter.setRowFilter(filterElapsedTime);
+										} catch (ParseException e) {
+											sorter.setRowFilter(null);
+										}
+										
 									}
 								}
 							});
