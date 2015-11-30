@@ -207,7 +207,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							Collections.reverse(rootCases);
 							
 							//TODO: currently, only one filter can be applied
-							
 							ItemListener checkBoxListener = new ItemListener(){
 
 								@Override
@@ -218,9 +217,9 @@ public class RequestMetricsGui extends JDialog implements Observer {
 									
 									if (e.getStateChange() == ItemEvent.SELECTED) {
 										if (source == filterTypeEJB) {
-											sorter.setRowFilter(RowFilter.regexFilter("EJB"));
+											sorter.setRowFilter(RowFilter.regexFilter("EJB", 3));
 										} else if (source == filterTypeServletFilter) {
-											sorter.setRowFilter(RowFilter.regexFilter("Servlet Filter"));
+											sorter.setRowFilter(RowFilter.regexFilter("Servlet Filter", 3));
 										}
 										
 									} else if (e.getStateChange() == ItemEvent.DESELECTED) {
@@ -232,8 +231,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							filterTypeEJB.addItemListener(checkBoxListener);
 							filterTypeServletFilter.addItemListener(checkBoxListener);
 							
-							
-							//TODO: if the field contains no value (e.g. when it is deleted), userInput should be treated as 0, so no entry is filtered
 							elapsedTimeFilterField.addKeyListener(new KeyAdapter() {
 								public void keyReleased(KeyEvent evt) {
 									if (evt != null) {
@@ -274,7 +271,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 										}
 										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
 										table.setRowSorter(sorter);
-										sorter.setRowFilter(RowFilter.regexFilter(detailFilterField.getText()));
+										sorter.setRowFilter(RowFilter.regexFilter(detailFilterField.getText(), 5));
 									}
 								}
 							});
