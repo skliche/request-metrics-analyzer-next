@@ -4,16 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FileDialog;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.io.File;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,12 +17,9 @@ import java.util.Observer;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -37,14 +27,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableRowSorter;
 
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
@@ -68,9 +56,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
 	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
-	private final JButton highestExecTimeButton = new JButton("Highest Execution Time");
-	private final JButton mostDirectChildrenTimeButton = new JButton("Most Direct Children");
-	private final JButton calcStatisticsButton = new JButton("Open Statistics");
 	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
@@ -79,10 +64,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private ProgressBarDialog fileProcessingDialog;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
-	private final JFormattedTextField elapsedTimeFilterField = new JFormattedTextField(NumberFormat.getIntegerInstance());
-	private final JFormattedTextField detailFilterField = new JFormattedTextField();
-	private final JCheckBox filterTypeEJB = new JCheckBox("EJB");
-	private final JCheckBox filterTypeServletFilter = new JCheckBox("Servlet Filter");
+	private TransactionDrilldownToolBar transactionDrilldownToolBar = new TransactionDrilldownToolBar();
+	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar();
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -101,47 +84,13 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		table = buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(table);
 
-		JToolBar rootCaseToolBar = new JToolBar();
-		rootCaseToolBar.setLayout(new FlowLayout());
 		listInternalFrame.add(rootCaseToolBar, "North");
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
 						
-		JToolBar drillDownToolBar = new JToolBar();
-		treeInternalFrame.getContentPane().add(drillDownToolBar, "North");
+		treeInternalFrame.getContentPane().add(transactionDrilldownToolBar, "North");
 		treeInternalFrame.setVisible(true);
 
-		final JLabel elapsedTimeFilterLabel = new JLabel("Show Elapsed Time > ");
-		elapsedTimeFilterField.setColumns(5);
-		
-		final JLabel detailFilterLabel = new JLabel("Search in Details: ");
-		detailFilterField.setColumns(7);
-		
-		
-		rootCaseToolBar.setPreferredSize(new Dimension(listInternalFrame.getWidth(), 35));
-		rootCaseToolBar.setFloatable(false);
-		rootCaseToolBar.add(filterTypeEJB);
-		rootCaseToolBar.add(filterTypeServletFilter);
-		rootCaseToolBar.add(elapsedTimeFilterLabel);
-		rootCaseToolBar.add(elapsedTimeFilterField);
-		rootCaseToolBar.add(detailFilterLabel);
-		rootCaseToolBar.add(detailFilterField);
-		
-		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
-		drillDownToolBar.setFloatable(false);
-		highestExecTimeButton.setToolTipText("Jump to the subtransaction with the highest execution time of all subtransactions.");
-		highestExecTimeButton.setEnabled(false);
-		highestExecTimeButton.addActionListener(selectHighestExecTimeNode());
-		mostDirectChildrenTimeButton.setToolTipText("Jump to the subtransaction with the highest number of direct children.");
-		mostDirectChildrenTimeButton.setEnabled(false);
-		mostDirectChildrenTimeButton.addActionListener(selectMostDirectChildrenNode());
-		calcStatisticsButton.setToolTipText("Calculate statistics for selected node and open the result in a new dialog window.");
-		calcStatisticsButton.setEnabled(false);
-		calcStatisticsButton.addActionListener(openStatistics());
-		drillDownToolBar.add(highestExecTimeButton);
-		drillDownToolBar.add(mostDirectChildrenTimeButton);
-		drillDownToolBar.add(calcStatisticsButton);
-		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
 		splitPane.setLeftComponent(listInternalFrame);
@@ -157,6 +106,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 
 		mainFrame.setVisible(true);
 	}
+
 
 	private JMenuBar buildMenubar(JFrame mainFrame, final RmProcessor processor) {
 		JMenuBar menu = new JMenuBar();
@@ -184,6 +134,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 					public void run() {
 						processor.processInputFiles(files);
 						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+						rootCaseToolBar.setFiltersEnabled(true);
 						
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
@@ -206,75 +157,16 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							Collections.sort(rootCases, new ElapsedTimeComparator());
 							Collections.reverse(rootCases);
 							
+							table.setRowSorter(null);
+							
 							//TODO: currently, only one filter can be applied
-							ItemListener checkBoxListener = new ItemListener(){
-
-								@Override
-								public void itemStateChanged(ItemEvent e) {
-									Object source = e.getItemSelectable();
-									TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
-									table.setRowSorter(sorter);
-									
-									if (e.getStateChange() == ItemEvent.SELECTED) {
-										if (source == filterTypeEJB) {
-											sorter.setRowFilter(RowFilter.regexFilter("EJB", 3));
-										} else if (source == filterTypeServletFilter) {
-											sorter.setRowFilter(RowFilter.regexFilter("Servlet Filter", 3));
-										}
-										
-									} else if (e.getStateChange() == ItemEvent.DESELECTED) {
-										table.setRowSorter(null);
-									}
-								}
-								
-							};
-							filterTypeEJB.addItemListener(checkBoxListener);
-							filterTypeServletFilter.addItemListener(checkBoxListener);
+							//Solution: use a list of rowFilters and set them as rowsorter for the table
+							//Problem: can't be defined in an enclosing scope (inner method)
+							List<RowFilter<UsecaseTableModel, Object>> filters = new ArrayList<RowFilter<UsecaseTableModel, Object>>();
+							RowFilter<UsecaseTableModel, Object> compoundFilter = null;
+							RowFilter<UsecaseTableModel, Object> eJBFilter;
+							//filters.add(eJBFilter);
 							
-							elapsedTimeFilterField.addKeyListener(new KeyAdapter() {
-								public void keyReleased(KeyEvent evt) {
-									if (evt != null) {
-										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
-										table.setRowSorter(sorter);
-										try {
-											elapsedTimeFilterField.commitEdit();
-											final Long userInput = (Long) elapsedTimeFilterField.getValue();
-											
-											RowFilter<UsecaseTableModel, Integer> filterElapsedTime = new RowFilter<UsecaseTableModel, Integer>(){
-												
-												@Override
-												public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Integer> entry) {
-													Long elapsedTime = (Long) rootCaseModel.getValueAt(entry.getIdentifier(), 2);
-													if (elapsedTime >= userInput || elapsedTimeFilterField.getValue().equals(null)) {
-														return true;
-													} else {
-														return false;
-													}
-												}
-											};
-											sorter.setRowFilter(filterElapsedTime);
-										} catch (ParseException e) {
-											sorter.setRowFilter(null);
-										}
-										
-									}
-								}
-							});
-							
-							detailFilterField.addKeyListener(new KeyAdapter() {
-								public void keyReleased(KeyEvent evt) {
-									if (evt != null) {
-										try {
-											detailFilterField.commitEdit();
-										} catch (ParseException e) {
-											e.printStackTrace();
-										}
-										TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>(rootCaseModel);
-										table.setRowSorter(sorter);
-										sorter.setRowFilter(RowFilter.regexFilter(detailFilterField.getText(), 5));
-									}
-								}
-							});
 							
 							// we write our own cell renderer for rendering the date values
 							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
@@ -324,8 +216,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
-						highestExecTimeButton.setEnabled(true);
-						mostDirectChildrenTimeButton.setEnabled(true);
+						transactionDrilldownToolBar.setSelectionButtonsEnabled(true);
 						
 						treeInternalFrame.setVisible(true);
 						repaintGui();
@@ -337,44 +228,14 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return businessTransactionTable;
 	}
 	
-	private ActionListener selectHighestExecTimeNode() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (currentSelectedRootNode != null)
-					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getHighestExecTimeNode());
-			}
-		};
-	}
-
-	private ActionListener selectMostDirectChildrenNode() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (currentSelectedRootNode != null)
-					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getMostDirectChildrenNode());
-			}
-		};
-	}
-
-	private ActionListener openStatistics() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (transactionDrilldownPanel != null && transactionDrilldownPanel.getSelectedTreeNode() != null)
-					transactionDrilldownPanel.calculateAndOpenStatisticsDialog(transactionDrilldownPanel.getSelectedTreeNode());;
-			}
-		};
-	}
-	
 	private void resetGui() {
 		treeInternalFrame.setVisible(false);
 		treeInternalFrame.setTitle("Transaction Drilldown");
 		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
 		treeInternalFrame.setVisible(true);
-		highestExecTimeButton.setEnabled(false);
-		mostDirectChildrenTimeButton.setEnabled(false);
-		calcStatisticsButton.setEnabled(false);
+		rootCaseToolBar.setFiltersEnabled(false);
+		transactionDrilldownToolBar.setSelectionButtonsEnabled(false);
+		transactionDrilldownToolBar.setStatisticsButtonEnabled(false);
 	}
 	
 	private void repaintGui() {
@@ -383,8 +244,16 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
-	public JButton getCalcStatisticsButton() {
-		return calcStatisticsButton;
+	public static JTable getTable() {
+		return table;
+	}
+
+	public static void setTable(JTable table) {
+		RequestMetricsGui.table = table;
+	}
+	
+	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
+		return transactionDrilldownToolBar;
 	}
 
 	@Override
