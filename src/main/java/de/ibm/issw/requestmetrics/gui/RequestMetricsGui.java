@@ -157,17 +157,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							Collections.sort(rootCases, new ElapsedTimeComparator());
 							Collections.reverse(rootCases);
 							
-							table.setRowSorter(null);
-							
-							//TODO: currently, only one filter can be applied
-							//Solution: use a list of rowFilters and set them as rowsorter for the table
-							//Problem: can't be defined in an enclosing scope (inner method)
-							List<RowFilter<UsecaseTableModel, Object>> filters = new ArrayList<RowFilter<UsecaseTableModel, Object>>();
-							RowFilter<UsecaseTableModel, Object> compoundFilter = null;
-							RowFilter<UsecaseTableModel, Object> eJBFilter;
-							//filters.add(eJBFilter);
-							
-							
 							// we write our own cell renderer for rendering the date values
 							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
 								public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -248,10 +237,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return table;
 	}
 
-	public static void setTable(JTable table) {
-		RequestMetricsGui.table = table;
-	}
-	
 	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
 		return transactionDrilldownToolBar;
 	}
