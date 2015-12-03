@@ -50,7 +50,7 @@ public class RootCaseFilter{
 		try {
 			detailFilter = RowFilter.regexFilter(userInput, 5);
 		} catch (Exception e) {
-			
+			//TODO: define exception handling
 		}
 
 		if (detailFilter != null)
@@ -109,6 +109,4 @@ public class RootCaseFilter{
 		table.setRowSorter(sorter);
 		sorter.setRowFilter(compoundFilter);
 	}
-	
-	
 }
