@@ -58,7 +58,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private RmProcessor processor;
-	private static JTable table;
+	private static JTable rootCaseTable;
 	private ProgressBarDialog fileProcessingDialog;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
@@ -79,8 +79,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		// register the GUI as observer for the events of the processor
 		processor.addObserver(this);
 		
-		table = buildRootCaseTable();
-		JScrollPane listScrollPane = new JScrollPane(table);
+		rootCaseTable = buildRootCaseTable();
+		JScrollPane listScrollPane = new JScrollPane(rootCaseTable);
 
 		listInternalFrame.add(rootCaseToolBar, "North");
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
@@ -132,24 +132,23 @@ public class RequestMetricsGui extends JDialog implements Observer {
 					public void run() {
 						processor.processInputFiles(files);
 						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
-						rootCaseToolBar.setFiltersEnabled(true);
 						
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
 						if(rootCases != null && !rootCases.isEmpty()) {
 							final UsecaseTableModel rootCaseModel = new UsecaseTableModel(rootCases);
-							table.setModel(rootCaseModel);
+							rootCaseTable.setModel(rootCaseModel);
 							// the width is currently hard coded and could be gathered from data in future
-							table.getColumnModel().getColumn(0).setMinWidth(215); 
-							table.getColumnModel().getColumn(0).setMaxWidth(515); 
-							table.getColumnModel().getColumn(1).setMinWidth(160); 
-							table.getColumnModel().getColumn(1).setMaxWidth(160); 
-							table.getColumnModel().getColumn(2).setMinWidth(100); 
-							table.getColumnModel().getColumn(2).setMaxWidth(100); 
-							table.getColumnModel().getColumn(3).setMinWidth(140); 
-							table.getColumnModel().getColumn(3).setMaxWidth(140); 
-							table.getColumnModel().getColumn(4).setMinWidth(85); 
-							table.getColumnModel().getColumn(4).setMaxWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(0).setMinWidth(215); 
+							rootCaseTable.getColumnModel().getColumn(0).setMaxWidth(515); 
+							rootCaseTable.getColumnModel().getColumn(1).setMinWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(1).setMaxWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(2).setMinWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(2).setMaxWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(3).setMinWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(3).setMaxWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(4).setMinWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(4).setMaxWidth(85); 
 							
 							// initially sort root cases by elapsed time descending
 							Collections.sort(rootCases, new ElapsedTimeComparator());
@@ -164,7 +163,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 									return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 								}
 							};
-							table.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+							rootCaseTable.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+							rootCaseToolBar.enableFilters(rootCaseTable);
 						}
 					}
 				}).start();
@@ -203,7 +203,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
-						transactionDrilldownToolBar.setSelectionButtonsEnabled(true);
+						transactionDrilldownToolBar.enableSelectionButtons(transactionDrilldownPanel);
 						
 						treeInternalFrame.setVisible(true);
 						repaintGui();
@@ -220,9 +220,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		treeInternalFrame.setTitle("Transaction Drilldown");
 		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
 		treeInternalFrame.setVisible(true);
-		rootCaseToolBar.setFiltersEnabled(false);
-		transactionDrilldownToolBar.setSelectionButtonsEnabled(false);
-		transactionDrilldownToolBar.setStatisticsButtonEnabled(false);
+		transactionDrilldownToolBar.disableSelectionButtons();
+		transactionDrilldownToolBar.disableStatisticsButton();
 	}
 	
 	private void repaintGui() {
@@ -231,10 +230,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
-	public static JTable getTable() {
-		return table;
-	}
-
 	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
 		return transactionDrilldownToolBar;
 	}
