@@ -69,7 +69,7 @@ public class UsecasePanel extends JPanel {
 	            if(currentTreePath != null) {
 	            	treeNodeSelected((AnalyzerTreeNode) currentTreePath.getLastPathComponent());
 	            } else {
-	            	rootWindow.getTransactionDrilldownToolBar().setStatisticsButtonEnabled(false);
+	            	rootWindow.getTransactionDrilldownToolBar().disableStatisticsButton();
 	            	selectedTreeNode = null;
 	            }
 	            super.mousePressed(event);
@@ -173,7 +173,7 @@ public class UsecasePanel extends JPanel {
 	
 	private void treeNodeSelected(AnalyzerTreeNode treeNode) {
 		selectedTreeNode = treeNode;
-    	rootWindow.getTransactionDrilldownToolBar().setStatisticsButtonEnabled(true);
+    	rootWindow.getTransactionDrilldownToolBar().enableStatisticsButton();
 	}
 	
 	public void calculateAndOpenStatisticsDialog(AnalyzerTreeNode treeNode) {
