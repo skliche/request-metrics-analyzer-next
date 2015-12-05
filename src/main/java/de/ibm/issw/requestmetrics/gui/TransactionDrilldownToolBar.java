@@ -1,6 +1,5 @@
 package de.ibm.issw.requestmetrics.gui;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -14,6 +13,15 @@ public class TransactionDrilldownToolBar extends JToolBar{
 	private final JButton calcStatisticsButton = new JButton("Open Statistics");
 	private UsecasePanel transactionDrilldownPanel;
 	
+	/**
+	 * builds a ToolBar with three buttons of the following features:
+	 * - Jump to subtransaction with highest execution time
+	 * - Jump to subtransaction with most direct children
+	 * - Calculate and show statistics of a subtransaction in a new dialog window
+	 * 
+	 * that are disabled by default
+	 * 
+	 */
 	public TransactionDrilldownToolBar(){
 		
 		setFloatable(false);
@@ -33,10 +41,6 @@ public class TransactionDrilldownToolBar extends JToolBar{
 		add(highestExecTimeButton);
 		add(mostDirectChildrenTimeButton);
 		add(calcStatisticsButton);
-	}
-	
-	public JButton getCalcStatisticsButton() {
-		return calcStatisticsButton;
 	}
 
 	private ActionListener selectHighestExecTimeNode() {
@@ -67,25 +71,36 @@ public class TransactionDrilldownToolBar extends JToolBar{
 		};
 	}
 	
-	public void setSelectionButtonsEnabled(boolean enabled) {
-		if (enabled == true) {
-			highestExecTimeButton.setEnabled(true);
-			mostDirectChildrenTimeButton.setEnabled(true);
-		} else {
-			highestExecTimeButton.setEnabled(false);
-			mostDirectChildrenTimeButton.setEnabled(false);
-		}
+	public JButton getCalcStatisticsButton() {
+		return calcStatisticsButton;
 	}
 	
-	public void setStatisticsButtonEnabled(boolean enabled) {
-		if (enabled == true) calcStatisticsButton.setEnabled(true);
-		else {
-			calcStatisticsButton.setEnabled(false);
-		}
-	}
-	
-	public void setTransactionDrilldownPanel(UsecasePanel transactionDrilldownPanel) {
+	public void enableSelectionButtons(UsecasePanel transactionDrilldownPanel) {
+		highestExecTimeButton.setEnabled(true);
+		mostDirectChildrenTimeButton.setEnabled(true);
+		
 		this.transactionDrilldownPanel = transactionDrilldownPanel;
 	}
 	
+	/**
+	 * disables the buttons for automatic selection of nodes
+	 */
+	public void disableSelectionButtons() {
+		highestExecTimeButton.setEnabled(false);
+		mostDirectChildrenTimeButton.setEnabled(false);
+	}
+	
+	/**
+	 * enables the "open statistics" button
+	 */
+	public void enableStatisticsButton() {
+		calcStatisticsButton.setEnabled(true);
+	}
+
+	/**
+	 * disables the "open statistics" button
+	 */
+	public void disableStatisticsButton() {
+		calcStatisticsButton.setEnabled(false);
+	}
 }
