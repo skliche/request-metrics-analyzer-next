@@ -64,7 +64,7 @@ public class RootCaseToolBar extends JToolBar{
 		checkBoxes.add(WEB_SERVICES);
 		checkBoxes.add(JNDI);
 		checkBoxes.add(JMS);
-		checkBoxes.add(ASYNCH_BEANS);
+		checkBoxes.add(ASYNC_BEANS);
 		
 		comboBox = new CheckComboBox(checkBoxes);
 		comboBox.setEnabled(false);
