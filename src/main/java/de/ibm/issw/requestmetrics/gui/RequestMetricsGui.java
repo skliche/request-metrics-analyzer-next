@@ -16,7 +16,6 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
-import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -27,7 +26,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -56,17 +54,16 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
 	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
-	private final JButton highestExecTimeButton = new JButton("Highest Execution Time");
-	private final JButton mostDirectChildrenTimeButton = new JButton("Most Direct Children");
-	private final JButton calcStatisticsButton = new JButton("Open Statistics");
 	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
 	
 	private RmProcessor processor;
-	private static JTable table;
+	private static JTable rootCaseTable;
 	private ProgressBarDialog fileProcessingDialog;
 	private UsecasePanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
+	private TransactionDrilldownToolBar transactionDrilldownToolBar = new TransactionDrilldownToolBar();
+	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar();
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -82,31 +79,16 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		// register the GUI as observer for the events of the processor
 		processor.addObserver(this);
 		
-		table = buildRootCaseTable();
-		JScrollPane listScrollPane = new JScrollPane(table);
+		rootCaseTable = buildRootCaseTable();
+		JScrollPane listScrollPane = new JScrollPane(rootCaseTable);
 
+		listInternalFrame.add(rootCaseToolBar, "North");
 		listInternalFrame.getContentPane().add(listScrollPane, "Center");
 		listInternalFrame.setVisible(true);
-		
-		JToolBar drillDownToolBar = new JToolBar();
-		treeInternalFrame.getContentPane().add(drillDownToolBar, "North");
+						
+		treeInternalFrame.getContentPane().add(transactionDrilldownToolBar, "North");
 		treeInternalFrame.setVisible(true);
 
-		drillDownToolBar.setPreferredSize(new Dimension(treeInternalFrame.getWidth(), 35));
-		drillDownToolBar.setFloatable(false);
-		highestExecTimeButton.setToolTipText("Jump to the subtransaction with the highest execution time of all subtransactions.");
-		highestExecTimeButton.setEnabled(false);
-		highestExecTimeButton.addActionListener(selectHighestExecTimeNode());
-		mostDirectChildrenTimeButton.setToolTipText("Jump to the subtransaction with the highest number of direct children.");
-		mostDirectChildrenTimeButton.setEnabled(false);
-		mostDirectChildrenTimeButton.addActionListener(selectMostDirectChildrenNode());
-		calcStatisticsButton.setToolTipText("Calculate statistics for selected node and open the result in a new dialog window.");
-		calcStatisticsButton.setEnabled(false);
-		calcStatisticsButton.addActionListener(openStatistics());
-		drillDownToolBar.add(highestExecTimeButton);
-		drillDownToolBar.add(mostDirectChildrenTimeButton);
-		drillDownToolBar.add(calcStatisticsButton);
-		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setDividerLocation(250);
 		splitPane.setLeftComponent(listInternalFrame);
@@ -122,6 +104,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 
 		mainFrame.setVisible(true);
 	}
+
 
 	private JMenuBar buildMenubar(JFrame mainFrame, final RmProcessor processor) {
 		JMenuBar menu = new JMenuBar();
@@ -153,18 +136,19 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
 						if(rootCases != null && !rootCases.isEmpty()) {
-							table.setModel(new UsecaseTableModel(rootCases));
+							final UsecaseTableModel rootCaseModel = new UsecaseTableModel(rootCases);
+							rootCaseTable.setModel(rootCaseModel);
 							// the width is currently hard coded and could be gathered from data in future
-							table.getColumnModel().getColumn(0).setMinWidth(215); 
-							table.getColumnModel().getColumn(0).setMaxWidth(515); 
-							table.getColumnModel().getColumn(1).setMinWidth(160); 
-							table.getColumnModel().getColumn(1).setMaxWidth(160); 
-							table.getColumnModel().getColumn(2).setMinWidth(100); 
-							table.getColumnModel().getColumn(2).setMaxWidth(100); 
-							table.getColumnModel().getColumn(3).setMinWidth(140); 
-							table.getColumnModel().getColumn(3).setMaxWidth(140); 
-							table.getColumnModel().getColumn(4).setMinWidth(85); 
-							table.getColumnModel().getColumn(4).setMaxWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(0).setMinWidth(215); 
+							rootCaseTable.getColumnModel().getColumn(0).setMaxWidth(515); 
+							rootCaseTable.getColumnModel().getColumn(1).setMinWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(1).setMaxWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(2).setMinWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(2).setMaxWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(3).setMinWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(3).setMaxWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(4).setMinWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(4).setMaxWidth(85); 
 							
 							// initially sort root cases by elapsed time descending
 							Collections.sort(rootCases, new ElapsedTimeComparator());
@@ -179,7 +163,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 									return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 								}
 							};
-							table.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+							rootCaseTable.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
+							rootCaseToolBar.enableFilters(rootCaseTable);
 						}
 					}
 				}).start();
@@ -218,8 +203,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
-						highestExecTimeButton.setEnabled(true);
-						mostDirectChildrenTimeButton.setEnabled(true);
+						transactionDrilldownToolBar.enableSelectionButtons(transactionDrilldownPanel);
 						
 						treeInternalFrame.setVisible(true);
 						repaintGui();
@@ -231,44 +215,13 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		return businessTransactionTable;
 	}
 	
-	private ActionListener selectHighestExecTimeNode() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (currentSelectedRootNode != null)
-					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getHighestExecTimeNode());
-			}
-		};
-	}
-
-	private ActionListener selectMostDirectChildrenNode() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (currentSelectedRootNode != null)
-					transactionDrilldownPanel.selectTreeNode(transactionDrilldownPanel.getMostDirectChildrenNode());
-			}
-		};
-	}
-
-	private ActionListener openStatistics() {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (transactionDrilldownPanel != null && transactionDrilldownPanel.getSelectedTreeNode() != null)
-					transactionDrilldownPanel.calculateAndOpenStatisticsDialog(transactionDrilldownPanel.getSelectedTreeNode());;
-			}
-		};
-	}
-	
 	private void resetGui() {
 		treeInternalFrame.setVisible(false);
 		treeInternalFrame.setTitle("Transaction Drilldown");
 		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
 		treeInternalFrame.setVisible(true);
-		highestExecTimeButton.setEnabled(false);
-		mostDirectChildrenTimeButton.setEnabled(false);
-		calcStatisticsButton.setEnabled(false);
+		transactionDrilldownToolBar.disableSelectionButtons();
+		transactionDrilldownToolBar.disableStatisticsButton();
 	}
 	
 	private void repaintGui() {
@@ -277,8 +230,8 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
-	public JButton getCalcStatisticsButton() {
-		return calcStatisticsButton;
+	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
+		return transactionDrilldownToolBar;
 	}
 
 	@Override
