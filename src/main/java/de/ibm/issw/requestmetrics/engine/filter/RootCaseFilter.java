@@ -47,7 +47,7 @@ public class RootCaseFilter{
 			@Override
 			public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Object> entry) {
 				if (rootCaseTable != null){
-					Long elapsedTime = (Long) rootCaseTable.getModel().getValueAt((int) entry.getIdentifier(), ELAPSED_TIME_COLUMN);
+					Long elapsedTime = (Long) rootCaseTable.getModel().getValueAt((Integer) entry.getIdentifier(), ELAPSED_TIME_COLUMN);
 					if (userInput == null || elapsedTime >= (Long) userInput)
 						return true;
 					else 
