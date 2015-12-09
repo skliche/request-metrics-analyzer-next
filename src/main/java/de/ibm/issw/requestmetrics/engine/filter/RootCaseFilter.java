@@ -10,16 +10,17 @@ import javax.swing.RowFilter.ComparisonType;
 import javax.swing.table.TableRowSorter;
 
 import de.ibm.issw.requestmetrics.gui.CheckComboBox;
-import de.ibm.issw.requestmetrics.gui.UsecaseTableModel;
+import de.ibm.issw.requestmetrics.gui.RequestMetricsGui;
+import de.ibm.issw.requestmetrics.gui.RootCaseTableModel;
 
 public class RootCaseFilter{
 
-	private RowFilter<UsecaseTableModel, Object> elapsedTimeRowFilter;
-	private RowFilter<UsecaseTableModel, Object> detailFilter;
-	private RowFilter<UsecaseTableModel, Object> dateTimeStartFilter;
-	private RowFilter<UsecaseTableModel, Object> dateTimeEndFilter;
-	private RowFilter<UsecaseTableModel, Object> typeFilter;
-	private List<RowFilter<UsecaseTableModel, Object>> filters = new ArrayList<RowFilter<UsecaseTableModel, Object>>();
+	private RowFilter<RootCaseTableModel, Object> elapsedTimeRowFilter;
+	private RowFilter<RootCaseTableModel, Object> detailFilter;
+	private RowFilter<RootCaseTableModel, Object> dateTimeStartFilter;
+	private RowFilter<RootCaseTableModel, Object> dateTimeEndFilter;
+	private RowFilter<RootCaseTableModel, Object> typeFilter;
+	private List<RowFilter<RootCaseTableModel, Object>> filters = new ArrayList<RowFilter<RootCaseTableModel, Object>>();
 	private JTable rootCaseTable;
 	
 	private final int TIMESTAMP_COLUMN = 1;
@@ -41,11 +42,11 @@ public class RootCaseFilter{
 		//
 		if (elapsedTimeRowFilter != null && filters.contains(elapsedTimeRowFilter))
 			filters.remove(elapsedTimeRowFilter);
-		elapsedTimeRowFilter = new RowFilter<UsecaseTableModel, Object>() {
+		elapsedTimeRowFilter = new RowFilter<RootCaseTableModel, Object>() {
 
 			//
 			@Override
-			public boolean include(javax.swing.RowFilter.Entry<? extends UsecaseTableModel, ? extends Object> entry) {
+			public boolean include(javax.swing.RowFilter.Entry<? extends RootCaseTableModel, ? extends Object> entry) {
 				if (rootCaseTable != null){
 					Long elapsedTime = (Long) rootCaseTable.getModel().getValueAt((Integer) entry.getIdentifier(), ELAPSED_TIME_COLUMN);
 					if (userInput == null || elapsedTime >= (Long) userInput)
@@ -127,10 +128,10 @@ public class RootCaseFilter{
 		if (typeFilter != null && filters.contains(typeFilter))
 			filters.remove(typeFilter);
 		
-		List<RowFilter<UsecaseTableModel, Object>> typeFilterList = new ArrayList<RowFilter<UsecaseTableModel, Object>>();
+		List<RowFilter<RootCaseTableModel, Object>> typeFilterList = new ArrayList<RowFilter<RootCaseTableModel, Object>>();
 		if (comboBox.getSelectedItems() != null) {
 			for (Object type : comboBox.getSelectedItems()) {
-				RowFilter<UsecaseTableModel, Object> rowFilter = RowFilter.regexFilter(type.toString(), TYPE_COLUMN);
+				RowFilter<RootCaseTableModel, Object> rowFilter = RowFilter.regexFilter(type.toString(), TYPE_COLUMN);
 				typeFilterList.add(rowFilter);
 			}
 			typeFilter = RowFilter.orFilter(typeFilterList);
@@ -150,7 +151,7 @@ public class RootCaseFilter{
 		filters.clear();
 
 		if (rootCaseTable != null) {
-			TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>((UsecaseTableModel) rootCaseTable.getModel());
+			TableRowSorter<RootCaseTableModel> sorter = new TableRowSorter<RootCaseTableModel>((RootCaseTableModel) rootCaseTable.getModel());
 			rootCaseTable.setRowSorter(sorter);
 			sorter.setRowFilter(null);
 		}
@@ -161,10 +162,13 @@ public class RootCaseFilter{
 	 * thereby ensures that different filters can be applied at the same time
 	 */
 	private void buildCompoundFilter() {
-		RowFilter<UsecaseTableModel, Object> compoundFilter = RowFilter.andFilter(filters);
+		RowFilter<RootCaseTableModel, Object> compoundFilter = RowFilter.andFilter(filters);
 		
-		TableRowSorter<UsecaseTableModel> sorter = new TableRowSorter<UsecaseTableModel>((UsecaseTableModel) rootCaseTable.getModel());
+		TableRowSorter<RootCaseTableModel> sorter = new TableRowSorter<RootCaseTableModel>((RootCaseTableModel) rootCaseTable.getModel());
 		rootCaseTable.setRowSorter(sorter);
 		sorter.setRowFilter(compoundFilter);
+		
+		// update the number of root cases in the frame title
+		RequestMetricsGui.setTitleRootCaseFrame(rootCaseTable.getRowCount());
 	}
 }

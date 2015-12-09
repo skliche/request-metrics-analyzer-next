@@ -11,7 +11,7 @@ public class TransactionDrilldownToolBar extends JToolBar{
 	private final JButton highestExecTimeButton = new JButton("Highest Execution Time");
 	private final JButton mostDirectChildrenTimeButton = new JButton("Most Direct Children");
 	private final JButton calcStatisticsButton = new JButton("Open Statistics");
-	private UsecasePanel transactionDrilldownPanel;
+	private TransactionDrilldownPanel transactionDrilldownPanel;
 	
 	/**
 	 * builds a ToolBar with three buttons of the following features:
@@ -75,7 +75,7 @@ public class TransactionDrilldownToolBar extends JToolBar{
 		return calcStatisticsButton;
 	}
 	
-	public void enableSelectionButtons(UsecasePanel transactionDrilldownPanel) {
+	public void enableSelectionButtons(TransactionDrilldownPanel transactionDrilldownPanel) {
 		highestExecTimeButton.setEnabled(true);
 		mostDirectChildrenTimeButton.setEnabled(true);
 		

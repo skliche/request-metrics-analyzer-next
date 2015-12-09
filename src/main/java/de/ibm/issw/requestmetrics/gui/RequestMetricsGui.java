@@ -53,14 +53,14 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private StringBuffer invalidFiles = new StringBuffer();
 	// GUI elements
 	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
-	private static final JInternalFrame listInternalFrame = new JInternalFrame("Business Transactions", true, false, true, true);
+	private static final JInternalFrame listInternalFrame = new JInternalFrame("Root Cases", true, false, true, true);
 	
-	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss.S");
 	
 	private RmProcessor processor;
 	private static JTable rootCaseTable;
 	private ProgressBarDialog fileProcessingDialog;
-	private UsecasePanel transactionDrilldownPanel;
+	private TransactionDrilldownPanel transactionDrilldownPanel;
 	private RMNode currentSelectedRootNode;
 	private TransactionDrilldownToolBar transactionDrilldownToolBar = new TransactionDrilldownToolBar();
 	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar();
@@ -79,7 +79,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		// register the GUI as observer for the events of the processor
 		processor.addObserver(this);
 		
-		rootCaseTable = buildRootCaseTable();
+		buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(rootCaseTable);
 
 		listInternalFrame.add(rootCaseToolBar, "North");
@@ -118,11 +118,11 @@ public class RequestMetricsGui extends JDialog implements Observer {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				fd.setVisible(true);
-				processor.reset();
-				invalidFiles = new StringBuffer();
 				final File[] files = fd.getFiles();
 				if(files.length == 0) return;
 				
+				processor.reset();
+				invalidFiles = new StringBuffer();
 				resetGui();
 
 				//create a new dialog containing 2 progress bars
@@ -131,24 +131,24 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				new Thread(new Runnable() {
 					public void run() {
 						processor.processInputFiles(files);
-						listInternalFrame.setTitle(processor.getRootCases().size() + " Business Transactions");
+						setTitleRootCaseFrame(processor.getRootCases().size());
 						
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
 						if(rootCases != null && !rootCases.isEmpty()) {
-							final UsecaseTableModel rootCaseModel = new UsecaseTableModel(rootCases);
+							final RootCaseTableModel rootCaseModel = new RootCaseTableModel(rootCases);
 							rootCaseTable.setModel(rootCaseModel);
 							// the width is currently hard coded and could be gathered from data in future
-							rootCaseTable.getColumnModel().getColumn(0).setMinWidth(215); 
-							rootCaseTable.getColumnModel().getColumn(0).setMaxWidth(515); 
-							rootCaseTable.getColumnModel().getColumn(1).setMinWidth(160); 
-							rootCaseTable.getColumnModel().getColumn(1).setMaxWidth(160); 
-							rootCaseTable.getColumnModel().getColumn(2).setMinWidth(100); 
-							rootCaseTable.getColumnModel().getColumn(2).setMaxWidth(100); 
-							rootCaseTable.getColumnModel().getColumn(3).setMinWidth(140); 
-							rootCaseTable.getColumnModel().getColumn(3).setMaxWidth(140); 
-							rootCaseTable.getColumnModel().getColumn(4).setMinWidth(85); 
-							rootCaseTable.getColumnModel().getColumn(4).setMaxWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMinWidth(215); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMaxWidth(515); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TIMESTAMP_COLUMN_INDEX).setMinWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TIMESTAMP_COLUMN_INDEX).setMaxWidth(160); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMinWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMaxWidth(100); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMinWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMaxWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMinWidth(85); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMaxWidth(85); 
 							
 							// initially sort root cases by elapsed time descending
 							Collections.sort(rootCases, new ElapsedTimeComparator());
@@ -176,30 +176,34 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		menu.add(fileMenu);
 		return menu;
 	}
+	
+	public static void setTitleRootCaseFrame(int numberOfRootCases) {
+		listInternalFrame.setTitle(numberOfRootCases + " Root Cases");
+	}
 
-	private JTable buildRootCaseTable() {
-		final JTable businessTransactionTable = new JTable();
-		businessTransactionTable.setFillsViewportHeight(true);
-		businessTransactionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		businessTransactionTable.setAutoCreateRowSorter(true);
+	private void buildRootCaseTable() {
+		rootCaseTable = new JTable();
+		rootCaseTable.setFillsViewportHeight(true);
+		rootCaseTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		rootCaseTable.setAutoCreateRowSorter(true);
 		
 		// reference to this window 
 		final RequestMetricsGui rootWindow = this;
 		
 		// add selection listener to select the use cases
-		businessTransactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+		rootCaseTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent event) {
 				// check if we are in an event sequence and only process the last one
-				if(!event.getValueIsAdjusting() && !businessTransactionTable.getSelectionModel().isSelectionEmpty()) {
-					int row = businessTransactionTable.getSelectedRow();
+				if(!event.getValueIsAdjusting() && !rootCaseTable.getSelectionModel().isSelectionEmpty()) {
+					int row = rootCaseTable.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
-						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(businessTransactionTable.convertRowIndexToModel(row));
+						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(rootCaseTable.convertRowIndexToModel(row));
 						LOG.fine("user selected use case " + currentSelectedRootCase.getRmNode().toString());
 						
 						currentSelectedRootNode = currentSelectedRootCase.getRmNode();
 						currentSelectedRootNode.calculateExecutionTime();
 						resetGui();
-						transactionDrilldownPanel = new UsecasePanel(rootWindow, currentSelectedRootNode, processor);
+						transactionDrilldownPanel = new TransactionDrilldownPanel(rootWindow, currentSelectedRootNode, processor);
 						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
 						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
@@ -211,8 +215,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 				}
 			} 
 		});
-		
-		return businessTransactionTable;
 	}
 	
 	private void resetGui() {

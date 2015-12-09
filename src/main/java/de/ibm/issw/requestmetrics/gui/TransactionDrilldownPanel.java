@@ -28,8 +28,8 @@ import de.ibm.issw.requestmetrics.gui.statistics.ChildNodeStatisticsEntry;
 import de.ibm.issw.requestmetrics.model.RMNode;
 
 @SuppressWarnings("serial")
-public class UsecasePanel extends JPanel {
-	private static final Logger LOG = Logger.getLogger(UsecasePanel.class.getName());
+public class TransactionDrilldownPanel extends JPanel {
+	private static final Logger LOG = Logger.getLogger(TransactionDrilldownPanel.class.getName());
 	private AnalyzerTreeNode selectedTreeNode;
 	private TreePath currentTreePath;
 	private JTree tree;
@@ -37,7 +37,7 @@ public class UsecasePanel extends JPanel {
 	private RMNode highestExecTimeNode;
 	private RMNode mostDirectChildrenNode;
 	
-	public UsecasePanel(RequestMetricsGui rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
+	public TransactionDrilldownPanel(RequestMetricsGui rootWindow, RMNode useCaseRootNode, RmProcessor processor) {
 		this.rootWindow = rootWindow;
 		
 		highestExecTimeNode = useCaseRootNode;
@@ -185,7 +185,7 @@ public class UsecasePanel extends JPanel {
 			@SuppressWarnings("unchecked")
 			Enumeration<AnalyzerTreeNode> childNodes = treeNode.children();
 			while (childNodes.hasMoreElements()) {
-				final UsecasePanel.AnalyzerTreeNode node = childNodes.nextElement();
+				final TransactionDrilldownPanel.AnalyzerTreeNode node = childNodes.nextElement();
 				
 				final String detail = node.getRmNode().rmData.getDetailCmp();
 				final long elapsedTime = node.getRmNode().rmData.getElapsedTime();
@@ -229,7 +229,7 @@ public class UsecasePanel extends JPanel {
 	private void searchNode (RMNode rmNode, AnalyzerTreeNode rootNode) {
 		Enumeration<AnalyzerTreeNode> subtransactions = rootNode.children();
 		while (subtransactions.hasMoreElements()) {
-			UsecasePanel.AnalyzerTreeNode node = subtransactions.nextElement();
+			TransactionDrilldownPanel.AnalyzerTreeNode node = subtransactions.nextElement();
 			
 			if (rmNode.getData().getCurrentCmp().getReqid() == node.rmnode.getData().getCurrentCmp().getReqid()) {
 				currentTreePath = new TreePath(node.getPath());
