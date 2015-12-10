@@ -95,7 +95,7 @@ public class CheckComboBox extends JComboBox {
 			checkBoxesList.add(checkBox);
 		}
 
-		checkBox = new CheckBoxObject("Clear Type Filters");
+		checkBox = new CheckBoxObject("Show all types");
 		checkBox.setSelected(selectedNone);
 		checkBoxesList.add(checkBox);
 	}
@@ -181,7 +181,7 @@ public class CheckComboBox extends JComboBox {
 			Object[] objects = getSelectedItems();
 			Vector<String> strings = new Vector();
 			if (objects == null) {
-				string = "Please select one or more ID types";
+				string = "All types";
 			} else {
 				for (Object object : objects) {
 					strings.add(object.toString());
