@@ -150,10 +150,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMinWidth(85); 
 							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMaxWidth(85); 
 							
-							// initially sort root cases by elapsed time descending
-							Collections.sort(rootCases, new ElapsedTimeComparator());
-							Collections.reverse(rootCases);
-							
 							// we write our own cell renderer for rendering the date values
 							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
 								public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -164,7 +160,11 @@ public class RequestMetricsGui extends JDialog implements Observer {
 								}
 							};
 							rootCaseTable.getColumnModel().getColumn(1).setCellRenderer(tableCellRenderer);
-							rootCaseToolBar.enableFilters(rootCaseTable);
+							rootCaseToolBar.enableFilters(rootCaseTable, processor.getRootCaseTypes());
+
+							// initially sort root cases by elapsed time descending
+							Collections.sort(rootCases, new ElapsedTimeComparator());
+							Collections.reverse(rootCases);
 						}
 					}
 				}).start();

@@ -11,9 +11,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
@@ -36,31 +36,25 @@ public class RootCaseToolBar extends JToolBar{
 	private JButton clearFiltersButton = new JButton("CLEAR");
 	private final CheckComboBox comboBox;
 	private RootCaseFilter rootCaseFilter;
-	private Set<String> checkBoxes;
 	private JCalendarCombo startDatePicker =  new JCalendarCombo(JCalendarCombo.DISPLAY_DATE | JCalendarCombo.DISPLAY_TIME, false);
 	private JCalendarCombo endDatePicker =  new JCalendarCombo(JCalendarCombo.DISPLAY_DATE | JCalendarCombo.DISPLAY_TIME, false);
 	
 	public static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss");
-	private static final String EJB = "EJB";
-	private static final String SERVLET_FILTER = "Servlet Filter";
-	private static final String WEB_SERVICES = "Web Services";
-	private static final String JNDI = "JNDI";
-	private static final String JMS = "JMS";
-	private static final String ASYNC_BEANS = "AsyncBeans";
 	
 	private static Date startLogTimeStamp;
 	private static Date endLogTimeStamp;
+	private Set<String> types;
 	
 	public RootCaseToolBar() {
 		setFloatable(false);
-		setLayout(new FlowLayout());
+		setLayout(new FlowLayout(FlowLayout.LEFT));
 		
 		elapsedTimeFilterField.setColumns(5);
 		elapsedTimeFilterField.setEnabled(false);
 		elapsedTimeFilterField.setFocusLostBehavior(JFormattedTextField.PERSIST);
 		elapsedTimeFilterField.addKeyListener(elapsedTimeFilterFieldListener);
 		
-		detailFilterField.setColumns(12);
+		detailFilterField.setColumns(20);
 		detailFilterField.setEnabled(false);
 		detailFilterField.setFocusLostBehavior(JFormattedTextField.PERSIST);
 		detailFilterField.addKeyListener(detailFieldListener);
@@ -68,23 +62,18 @@ public class RootCaseToolBar extends JToolBar{
 		clearFiltersButton.setEnabled(false);
 		clearFiltersButton.addActionListener(clearFiltersListener);
 		
-		checkBoxes = new HashSet<String>();
-		checkBoxes.add(EJB);
-		checkBoxes.add(SERVLET_FILTER);
-		checkBoxes.add(WEB_SERVICES);
-		checkBoxes.add(JNDI);
-		checkBoxes.add(JMS);
-		checkBoxes.add(ASYNC_BEANS);
-		
-		comboBox = new CheckComboBox(checkBoxes);
+		comboBox = new CheckComboBox(new TreeSet<String>());
 		comboBox.setEnabled(false);
+		comboBox.setPreferredSize(new Dimension(200, 20));
+		comboBox.setMinimumSize(comboBox.getPreferredSize());
+		comboBox.setMaximumSize(comboBox.getPreferredSize());
 		comboBox.addSelectionChangedListener(checkBoxListener);
 		
 		startDatePicker.setDateFormat(sdf);
 		startDatePicker.setDate(null);
 		startDatePicker.setEditable(false);
 		startDatePicker.setEnabled(false);
-		startDatePicker.setPreferredSize(new Dimension(150, 25));
+		startDatePicker.setPreferredSize(new Dimension(150, 20));
 		startDatePicker.setMinimumSize(startDatePicker.getPreferredSize());
 		startDatePicker.setMaximumSize(startDatePicker.getPreferredSize());
 		startDatePicker.setToolTipText("Filter for entries which occured after the chosen date");
@@ -94,21 +83,21 @@ public class RootCaseToolBar extends JToolBar{
 		endDatePicker.setDate(null);
 		endDatePicker.setEditable(false);
 		endDatePicker.setEnabled(false);
-		endDatePicker.setPreferredSize(new Dimension(150, 25));
+		endDatePicker.setPreferredSize(new Dimension(150, 20));
 		endDatePicker.setMinimumSize(startDatePicker.getPreferredSize());
 		endDatePicker.setMaximumSize(startDatePicker.getPreferredSize());
 		endDatePicker.setToolTipText("Filter for entries which occured before the chosen date");
 		endDatePicker.addDateListener(endDateListener);
 		
-		this.add(new JLabel("Types:"));
-		this.add(comboBox);
-		this.add(new JLabel("Start Date >"));
+		this.add(new JLabel("Timestamp >"));
 		this.add(startDatePicker);
-		this.add(new JLabel("End Date <"));
+		this.add(new JLabel("Timestamp <"));
 		this.add(endDatePicker);
 		this.add(new JLabel("Elapsed Time >"));
 		this.add(elapsedTimeFilterField);
-		this.add(new JLabel("Filter Details:"));
+		this.add(new JLabel("Types:"));
+		this.add(comboBox);
+		this.add(new JLabel("Details:"));
 		this.add(detailFilterField);
 		this.add(clearFiltersButton);
 	}
@@ -170,7 +159,7 @@ public class RootCaseToolBar extends JToolBar{
 	
 	private void clearFilters() {
 		rootCaseFilter.clearFilters();
-		comboBox.resetCheckBoxes(checkBoxes, false);
+		comboBox.resetCheckBoxes(types, false);
 		elapsedTimeFilterField.setValue(null);
 		detailFilterField.setText("");
 		startDatePicker.setDate(startLogTimeStamp);
@@ -181,7 +170,7 @@ public class RootCaseToolBar extends JToolBar{
 	 * enables the filters and generates a new instance of the filter class
 	 * @param rootCaseTable the table that the filters are applied on
 	 */
-	public void enableFilters(JTable rootCaseTable) {
+	public void enableFilters(JTable rootCaseTable, Set<String> types) {
 		elapsedTimeFilterField.setEnabled(true);
 		detailFilterField.setEnabled(true);
 		comboBox.setEnabled(true);
@@ -198,6 +187,8 @@ public class RootCaseToolBar extends JToolBar{
 			startLogTimeStamp = new Date(rootCases.get(0).getRmNode().getData().getLogTimeStamp().getTime()-1);
 			endLogTimeStamp = new Date(rootCases.get(rootCases.size()-1).getRmNode().getData().getLogTimeStamp().getTime()+1);
 		}
+		// set types for combobox
+		this.types = types;
 		clearFilters();
 	}
 	
