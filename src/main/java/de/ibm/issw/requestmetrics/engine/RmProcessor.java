@@ -17,15 +17,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
+import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
 import de.ibm.issw.requestmetrics.model.DummyRmRootCase;
 import de.ibm.issw.requestmetrics.model.RMComponent;
@@ -47,6 +48,7 @@ public class RmProcessor extends Observable{
 	private final Map<Long, RMNode> allNodes = new HashMap<Long, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	private final List<Long> requestIds = new ArrayList<Long>();
+	private final Set<String> rootCaseTypes = new TreeSet<String>();
 	
 	private Map<String, Integer> fileLinesMap;
 	private Long totalLinesAmount;
@@ -253,6 +255,8 @@ public class RmProcessor extends Observable{
 				// we mark the record as root record and put it in the list of root-records
 				final RmRootCase rootCase = new RmRootCase(rmNode);
 				rootCases.add(rootCase);
+				// fill type for root case filter
+				rootCaseTypes.add(rmRecord.getTypeCmp());
 			}
 			
 			// if we previously added a dummy record, we need to merge it with the real record
@@ -356,6 +360,10 @@ public class RmProcessor extends Observable{
 
 	public List<RmRootCase> getRootCases() {
 		return rootCases;
+	}
+	
+	public Set<String> getRootCaseTypes() {
+		return rootCaseTypes;
 	}
 
 	/**
