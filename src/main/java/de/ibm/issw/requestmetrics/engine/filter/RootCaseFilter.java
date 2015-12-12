@@ -76,7 +76,8 @@ public class RootCaseFilter{
 			filters.remove(detailFilter);
 		
 		try {
-			detailFilter = RowFilter.regexFilter(userInput, DETAIL_COLUMN);
+			// perform case insensitive filtering
+			detailFilter = RowFilter.regexFilter("(?i)" + userInput, DETAIL_COLUMN);
 		} catch (Exception e) {
 			//TODO: define exception handling
 		}
