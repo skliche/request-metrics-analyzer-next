@@ -1,0 +1,19 @@
+ <HTML>
+    <HEAD>
+      <TITLE>$title</TITLE>
+    </HEAD>
+    <BODY>
+      $text<br>
+      #set( $count = 1 )  
+      <TABLE>
+        #foreach( $car in $carList )
+          <TR>
+            <TD>$count)</TD>
+            <TD>$car.name</TD>
+            <TD>$car.type</TD>
+          </TR>
+          #set( $count = $count + 1 )
+        #end
+      </TABLE>
+    </BODY>
+  </HTML>
