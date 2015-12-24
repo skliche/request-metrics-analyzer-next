@@ -5,6 +5,8 @@ import java.util.EventObject;
 
 @SuppressWarnings("serial")
 public class ParsingAllFilesHasFinishedEvent extends EventObject {
+	//TODO: why is there a reference to a file? We process multiple files and thus the event either should 
+	// know all files or none
 	private File file;
 	
 	public ParsingAllFilesHasFinishedEvent(Object source, File file) {
