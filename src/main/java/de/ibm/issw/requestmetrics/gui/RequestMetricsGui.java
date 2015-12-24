@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FileDialog;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -58,8 +57,8 @@ public class RequestMetricsGui implements Observer {
 	private RMNode currentSelectedRootNode;
 
 	// GUI elements
-	private final JPanel transactionDrilldownScrollFrame = new JPanel();
-	private final JPanel rootCaseScrollFrame = new JPanel();
+	private final JPanel transactionDrilldownScrollFrame = new JPanel(new BorderLayout());
+	private final JPanel rootCaseScrollFrame = new JPanel(new BorderLayout());
 	
 	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar(this);
 	private JTable rootCaseTable;
@@ -91,12 +90,10 @@ public class RequestMetricsGui implements Observer {
 		processor.addObserver(this);
 		
 		buildRootCaseTable();
-		rootCaseScrollFrame.setLayout(new BorderLayout());
-		rootCaseScrollFrame.add(rootCaseToolBar, "North");
-		rootCaseScrollFrame.add(new JScrollPane(rootCaseTable), "Center");
+		rootCaseScrollFrame.add(rootCaseToolBar, BorderLayout.NORTH);
+		rootCaseScrollFrame.add(new JScrollPane(rootCaseTable), BorderLayout.CENTER);
 		setTitleRootCaseFrame("Transactions");
 		
-		transactionDrilldownScrollFrame.setLayout(new BorderLayout());
 		setTitleTransactionDrilldownFrame("Transaction Drilldown");
 		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rootCaseScrollFrame, transactionDrilldownScrollFrame);
