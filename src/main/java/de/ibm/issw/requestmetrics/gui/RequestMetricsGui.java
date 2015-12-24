@@ -90,7 +90,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		treeInternalFrame.setVisible(true);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		splitPane.setDividerLocation(250);
+		splitPane.setResizeWeight(0.3);
 		splitPane.setLeftComponent(listInternalFrame);
 		splitPane.setRightComponent(treeInternalFrame);
 		
