@@ -47,7 +47,6 @@ public class RmProcessor extends Observable{
 
 	private final Map<Long, RMNode> allNodes = new HashMap<Long, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
-	private final List<Long> requestIds = new ArrayList<Long>();
 	private final Set<String> rootCaseTypes = new TreeSet<String>();
 	
 	private Map<String, Integer> fileLinesMap;
