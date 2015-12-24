@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FileDialog;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -16,16 +17,18 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -55,8 +58,8 @@ public class RequestMetricsGui implements Observer {
 	private RMNode currentSelectedRootNode;
 
 	// GUI elements
-	private final JInternalFrame transactionDrilldownScrollFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
-	private final JInternalFrame rootCaseScrollFrame = new JInternalFrame("Root Cases", true, false, true, true);
+	private final JPanel transactionDrilldownScrollFrame = new JPanel();
+	private final JPanel rootCaseScrollFrame = new JPanel();
 	
 	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar(this);
 	private JTable rootCaseTable;
@@ -88,19 +91,16 @@ public class RequestMetricsGui implements Observer {
 		processor.addObserver(this);
 		
 		buildRootCaseTable();
-		JScrollPane listScrollPane = new JScrollPane(rootCaseTable);
-
+		rootCaseScrollFrame.setLayout(new BorderLayout());
 		rootCaseScrollFrame.add(rootCaseToolBar, "North");
-		rootCaseScrollFrame.getContentPane().add(listScrollPane, "Center");
-		rootCaseScrollFrame.setVisible(true);
-						
-		transactionDrilldownScrollFrame.getContentPane().add(transactionDrilldownToolBar, "North");
-		transactionDrilldownScrollFrame.setVisible(true);
-
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		rootCaseScrollFrame.add(new JScrollPane(rootCaseTable), "Center");
+		setTitleRootCaseFrame("Transactions");
+		
+		transactionDrilldownScrollFrame.setLayout(new BorderLayout());
+		setTitleTransactionDrilldownFrame("Transaction Drilldown");
+		
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rootCaseScrollFrame, transactionDrilldownScrollFrame);
 		splitPane.setResizeWeight(0.3);
-		splitPane.setLeftComponent(rootCaseScrollFrame);
-		splitPane.setRightComponent(transactionDrilldownScrollFrame);
 		
 		final JMenuBar menuBar = buildMenubar(mainFrame, processor);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -138,7 +138,7 @@ public class RequestMetricsGui implements Observer {
 				new Thread(new Runnable() {
 					public void run() {
 						processor.processInputFiles(files);
-						setTitleRootCaseFrame(processor.getRootCases().size());
+						setTitleRootCaseFrame(processor.getRootCases().size() + " Transactions");
 						
 						// remove the old model
 						List<RmRootCase> rootCases = processor.getRootCases();
@@ -184,8 +184,16 @@ public class RequestMetricsGui implements Observer {
 		return menu;
 	}
 	
-	public void setTitleRootCaseFrame(int numberOfRootCases) {
-		rootCaseScrollFrame.setTitle(numberOfRootCases + " Root Cases");
+	public void setTitleRootCaseFrame(String title) {
+		TitledBorder border = BorderFactory.createTitledBorder(title);
+		border.setTitleJustification(TitledBorder.CENTER);
+		rootCaseScrollFrame.setBorder(border);
+	}
+	
+	public void setTitleTransactionDrilldownFrame(String title) {
+		TitledBorder border = BorderFactory.createTitledBorder(title);
+		border.setTitleJustification(TitledBorder.CENTER);
+		transactionDrilldownScrollFrame.setBorder(border);
 	}
 
 	private void buildRootCaseTable() {
@@ -211,8 +219,8 @@ public class RequestMetricsGui implements Observer {
 						currentSelectedRootNode.calculateExecutionTime();
 						resetGui();
 						transactionDrilldownPanel = new TransactionDrilldownPanel(rootWindow, currentSelectedRootNode, processor);
-						transactionDrilldownScrollFrame.getContentPane().add(transactionDrilldownPanel, "Center");
-						transactionDrilldownScrollFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
+						transactionDrilldownScrollFrame.add(transactionDrilldownPanel, "Center");
+						setTitleTransactionDrilldownFrame("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
 						transactionDrilldownToolBar.enableSelectionButtons(transactionDrilldownPanel);
 						
@@ -226,8 +234,9 @@ public class RequestMetricsGui implements Observer {
 	
 	private void resetGui() {
 		transactionDrilldownScrollFrame.setVisible(false);
-		transactionDrilldownScrollFrame.setTitle("Transaction Drilldown");
-		if(transactionDrilldownPanel != null) transactionDrilldownScrollFrame.getContentPane().remove(transactionDrilldownPanel);
+		setTitleTransactionDrilldownFrame("Transaction Drilldown");
+		
+		if(transactionDrilldownPanel != null) transactionDrilldownScrollFrame.remove(transactionDrilldownPanel);
 		transactionDrilldownScrollFrame.setVisible(true);
 		transactionDrilldownToolBar.disableSelectionButtons();
 		transactionDrilldownToolBar.disableStatisticsButton();

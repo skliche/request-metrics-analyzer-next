@@ -172,6 +172,6 @@ public class RootCaseFilter{
 		sorter.setRowFilter(compoundFilter);
 		
 		// update the number of root cases in the frame title
-		gui.setTitleRootCaseFrame(rootCaseTable.getRowCount());
+		gui.setTitleRootCaseFrame(rootCaseTable.getRowCount() + " Transactions");
 	}
 }
