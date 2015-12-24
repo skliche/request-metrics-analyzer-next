@@ -45,9 +45,6 @@ import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui implements Observer {
-	public RequestMetricsGui() {
-		
-		}
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
 	private List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
 	private StringBuffer invalidFiles = new StringBuffer();
