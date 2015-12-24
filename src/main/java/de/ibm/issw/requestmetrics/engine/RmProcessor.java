@@ -1,10 +1,6 @@
 package de.ibm.issw.requestmetrics.engine;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,8 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -24,130 +20,66 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
-import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
-import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
-import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
-import de.ibm.issw.requestmetrics.model.DummyRmRootCase;
 import de.ibm.issw.requestmetrics.model.RMComponent;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RMRecord;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 import de.ibm.issw.requestmetrics.util.StringPool;
 
-public class RmProcessor extends Observable{
+public class RmProcessor extends Observable implements Processor{
+	// Logging and utilities
 	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
+	// Parsing 
 	private static final String REGEX_GREPPED = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final String REGEX_RAW = "\\[([^\\]\\*]*)\\] (\\w{8}) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN_GREPPED = Pattern.compile(REGEX_GREPPED);
 	private static final Pattern PATTERN_RAW = Pattern.compile(REGEX_RAW);
 	private static final String UNKNOWN = "UNKNOWN";
+	private String lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
 
+	// Internal data structures
 	private final Map<Long, RMNode> allNodes = new HashMap<Long, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	private final Set<String> rootCaseTypes = new TreeSet<String>();
 	
-	private Map<String, Integer> fileLinesMap;
-	private Long totalLinesAmount;
-	private Long elapsedTimeBorder = 0l;
-	private File currentFile;
-	private String lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
-	private Long totalProcessedLines = 0l;
-	private Integer processedFiles = 0;
-
-	/**
-	 * Counts the number of lines for each file and saves them in a hash map together with the filename.
-	 * Adds the number of the lines for the current file to the total number of lines.
-	 * @param files Array of all files that were selected to parse
-	 */
-	public void preProcessInputFiles(File[] files) {
-		try{
-			fileLinesMap = new HashMap<String, Integer>();
-			totalLinesAmount = 0l;
-			for (File file: files) {
-				LineNumberReader lnr = new LineNumberReader(new FileReader(file));
-				lnr.skip(Long.MAX_VALUE);
-				Integer currentLinesAmount = lnr.getLineNumber();
-				lnr.close();
-				totalLinesAmount += currentLinesAmount;
-				fileLinesMap.put(file.getName(), currentLinesAmount);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+	private FileHandler fileHandler;
 	
-	/**
-	 * Calculates the percentage of processed lines (for the currently parsing file and for all parsing files)
-	 * and notifies the observers if it has increased (needed for progress bars by now)
-	 * @param processedLines the processed lines of the currently processed file
-	 * @param fileName name of the currently processed file, needed to get its number of lines from the fileLinesMap
-	 */
-	public void checkProcessedLines(Integer processedLines, String fileName) {
-		//we need the factor 100 to avoid errors in calculating files with less than 100 lines
-		Integer percentCurrentFile = 100 * processedLines / fileLinesMap.get(fileName);
-		Integer percentAllFiles = (int) (100 * totalProcessedLines / totalLinesAmount);
-
-		//check if the percent-value changes in comparison to the last processed line; if it changed, notify the observers
-		if (percentCurrentFile != (100*(processedLines-1) / fileLinesMap.get(fileName))) {
-			setChanged();
-			notifyObservers(new PercentageIncreasedEvent(this, currentFile.getName(), percentCurrentFile, percentAllFiles, fileLinesMap.size(), processedFiles));
-		}
+	public RmProcessor() {
+		fileHandler = new FileHandler(this);
 	}
 	
 	public void processInputFiles(File[] files) {
-		preProcessInputFiles(files);
-		for (File file : files) {
-			currentFile = file;
-			processInputFile (file);
+		// delegate to the file handler
+		fileHandler.processInputFiles(files);
+		
+		if(getRootCases().size() > 0) {
+			LOG.info("Number of testCase tables found: " + getRootCases().size());
 		}
-		//tell the observers that processing all files has finished
-		setChanged();
-		notifyObservers(new ParsingAllFilesHasFinishedEvent(this, currentFile));
 	}
 	
-	public void processInputFile(String inputFileName) {
-		processInputFile(new File(inputFileName));
-	}
-		
-	public void processInputFile (File file) {		
+	@Override
+	public void beforeSingleFileParsed(File file) {
 		this.lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
-		
-		Integer processedLines = 0;
-		try {
-			final FileReader inputFileReader = new FileReader(file);
-			final BufferedReader inputStream = new BufferedReader(inputFileReader);
-			String line = null;
-			while ((line = inputStream.readLine()) != null) {
-				final RMRecord record = processSingleLine(line);
-				if(record != null) {
-					// process the record 
-					addRmRecordToDataset(record);
-				}
-				processedLines++;
-				totalProcessedLines++;
-				checkProcessedLines(processedLines, file.getName());
-			}
-			inputStream.close();
-			LOG.info("Processed " + processedLines + " lines.");
-			
-			if(getRootCases().size() > 0) {
-				LOG.info("Number of testCase tables found: " + getRootCases().size());
-			} 
-			else if (getRootCases().size() == 0 && allNodes.size() == 0){
-				//notify observers that the file can not be processed because no metrics data was found
-				setChanged();
-				notifyObservers(new UnsupportedFileEvent(this, file.getName()));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			processedFiles++;
-			//when processed a file, notify the observers that we are done with the file
+	}
+
+	@Override
+	public void afterSingleFileParsed(File file) {
+		if (rootCases.size() == 0 && allNodes.size() == 0){
+			//notify observers that the file can not be processed because no metrics data was found
 			setChanged();
-			notifyObservers(new ParsingFileHasFinishedEvent(this, file.getName()));
+			notifyObservers(new UnsupportedFileEvent(this, file.getName()));
+		}
+	}
+	
+	@Override
+	public void handleLine(String line, File file) {
+		final RMRecord record = processSingleLine(line, file);
+		if(record != null) {
+			// process the record 
+			addRmRecordToDataset(record);
 		}
 	}
 	
@@ -157,7 +89,7 @@ public class RmProcessor extends Observable{
 	 * @return RMRecord the record that has been generated or null if the line is not a valid log statement
 	 * 
 	 */
-	private RMRecord processSingleLine(String line) {
+	private RMRecord processSingleLine(String line, File file) {
 		RMRecord record = null;
 		
 		// parse the log using a REGEX, Strings are processed by a string pool
@@ -178,13 +110,13 @@ public class RmProcessor extends Observable{
 		else if (logMatcherRaw.matches()) {
 			currentParsingType = LogParsingTypeEvent.TYPE_RAW;
 			currentMatcher = logMatcherRaw;
-			logFileName = currentFile.getName();
+			logFileName = file.getName();
 		}
 		
 		//check if the parsing type changed and notify observers if it has
 		if (parsingTypeHasChanged(currentParsingType, lastParsingType)) {
 			setChanged();
-			notifyObservers(new LogParsingTypeEvent(this, currentFile.getName(), currentParsingType));
+			notifyObservers(new LogParsingTypeEvent(this, file.getName(), currentParsingType));
 		}
 		
 		if(!currentParsingType.equals(LogParsingTypeEvent.TYPE_UNKNOWN)) lastParsingType = currentParsingType;
@@ -249,15 +181,12 @@ public class RmProcessor extends Observable{
 		
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.isRootCase()) {
-			// filter by time
-			if (rmRecord.getElapsedTime() >= elapsedTimeBorder) {
-				// we mark the record as root record and put it in the list of root-records
-				final RmRootCase rootCase = new RmRootCase(rmNode);
-				rootCases.add(rootCase);
-				// fill type for root case filter
-				rootCaseTypes.add(rmRecord.getTypeCmp());
-			}
-			
+			// we mark the record as root record and put it in the list of root-records
+			final RmRootCase rootCase = new RmRootCase(rmNode);
+			rootCases.add(rootCase);
+			// fill type for root case filter
+			rootCaseTypes.add(rmRecord.getTypeCmp());
+		
 			// if we previously added a dummy record, we need to merge it with the real record
 			RMNode dummyNode = allNodes.get(rmRecord.getCurrentCmp().getReqid());
 			if(dummyNode != null) {
@@ -320,6 +249,7 @@ public class RmProcessor extends Observable{
 	 * @return a list of RM node that are not a root event and not referenced by a root event
 	 * 
 	 */
+	/*
 	public List<RMNode> findUnreferencedEvents() {
 		LOG.info("looking for dirty events...");
 		List<RMNode> result = new ArrayList<RMNode>();
@@ -351,10 +281,10 @@ public class RmProcessor extends Observable{
 		}
 		LOG.info("found " + parentNodeKeys.size() + " dirty events: " + parentNodeKeys);
 		return result;
-	}
+	}*/
 	
 	public void setElapsedTimeBorder(Long elapsedTimeBorder) {
-		this.elapsedTimeBorder = elapsedTimeBorder;
+		//TODO: remove method
 	}
 
 	public List<RmRootCase> getRootCases() {
@@ -371,9 +301,12 @@ public class RmProcessor extends Observable{
 	public void reset() {
 		rootCases.clear();
 		allNodes.clear();
-		fileLinesMap = null;
-		totalLinesAmount = 0l;
-		totalProcessedLines = 0l;
-		processedFiles = 0;
+		fileHandler.reset();
+	}
+	
+	@Override
+	public synchronized void addObserver(Observer o) {
+		super.addObserver(o);
+		fileHandler.addObserver(o);
 	}
 }
