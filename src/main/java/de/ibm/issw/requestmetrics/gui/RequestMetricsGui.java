@@ -52,8 +52,8 @@ public class RequestMetricsGui implements Observer {
 	private List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
 	private StringBuffer invalidFiles = new StringBuffer();
 	// GUI elements
-	private static final JInternalFrame treeInternalFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
-	private static final JInternalFrame listInternalFrame = new JInternalFrame("Root Cases", true, false, true, true);
+	private static final JInternalFrame transactionDrilldownScrollFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
+	private static final JInternalFrame rootCaseScrollFrame = new JInternalFrame("Root Cases", true, false, true, true);
 	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss.S");
 	
@@ -91,17 +91,17 @@ public class RequestMetricsGui implements Observer {
 		buildRootCaseTable();
 		JScrollPane listScrollPane = new JScrollPane(rootCaseTable);
 
-		listInternalFrame.add(rootCaseToolBar, "North");
-		listInternalFrame.getContentPane().add(listScrollPane, "Center");
-		listInternalFrame.setVisible(true);
+		rootCaseScrollFrame.add(rootCaseToolBar, "North");
+		rootCaseScrollFrame.getContentPane().add(listScrollPane, "Center");
+		rootCaseScrollFrame.setVisible(true);
 						
-		treeInternalFrame.getContentPane().add(transactionDrilldownToolBar, "North");
-		treeInternalFrame.setVisible(true);
+		transactionDrilldownScrollFrame.getContentPane().add(transactionDrilldownToolBar, "North");
+		transactionDrilldownScrollFrame.setVisible(true);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setResizeWeight(0.3);
-		splitPane.setLeftComponent(listInternalFrame);
-		splitPane.setRightComponent(treeInternalFrame);
+		splitPane.setLeftComponent(rootCaseScrollFrame);
+		splitPane.setRightComponent(transactionDrilldownScrollFrame);
 		
 		final JMenuBar menuBar = buildMenubar(mainFrame, processor);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -186,7 +186,7 @@ public class RequestMetricsGui implements Observer {
 	}
 	
 	public static void setTitleRootCaseFrame(int numberOfRootCases) {
-		listInternalFrame.setTitle(numberOfRootCases + " Root Cases");
+		rootCaseScrollFrame.setTitle(numberOfRootCases + " Root Cases");
 	}
 
 	private void buildRootCaseTable() {
@@ -212,12 +212,12 @@ public class RequestMetricsGui implements Observer {
 						currentSelectedRootNode.calculateExecutionTime();
 						resetGui();
 						transactionDrilldownPanel = new TransactionDrilldownPanel(rootWindow, currentSelectedRootNode, processor);
-						treeInternalFrame.getContentPane().add(transactionDrilldownPanel, "Center");
-						treeInternalFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
+						transactionDrilldownScrollFrame.getContentPane().add(transactionDrilldownPanel, "Center");
+						transactionDrilldownScrollFrame.setTitle("Transaction Drilldown for #" + currentSelectedRootCase.getRmNode().getData().getCurrentCmp().getReqid() + " " + currentSelectedRootCase.getRmNode().getData().getDetailCmp());
 						
 						transactionDrilldownToolBar.enableSelectionButtons(transactionDrilldownPanel);
 						
-						treeInternalFrame.setVisible(true);
+						transactionDrilldownScrollFrame.setVisible(true);
 						repaintGui();
 					}
 				}
@@ -226,17 +226,17 @@ public class RequestMetricsGui implements Observer {
 	}
 	
 	private void resetGui() {
-		treeInternalFrame.setVisible(false);
-		treeInternalFrame.setTitle("Transaction Drilldown");
-		if(transactionDrilldownPanel != null) treeInternalFrame.getContentPane().remove(transactionDrilldownPanel);
-		treeInternalFrame.setVisible(true);
+		transactionDrilldownScrollFrame.setVisible(false);
+		transactionDrilldownScrollFrame.setTitle("Transaction Drilldown");
+		if(transactionDrilldownPanel != null) transactionDrilldownScrollFrame.getContentPane().remove(transactionDrilldownPanel);
+		transactionDrilldownScrollFrame.setVisible(true);
 		transactionDrilldownToolBar.disableSelectionButtons();
 		transactionDrilldownToolBar.disableStatisticsButton();
 	}
 	
 	private void repaintGui() {
-		treeInternalFrame.repaint();
-		listInternalFrame.repaint();
+		transactionDrilldownScrollFrame.repaint();
+		rootCaseScrollFrame.repaint();
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
