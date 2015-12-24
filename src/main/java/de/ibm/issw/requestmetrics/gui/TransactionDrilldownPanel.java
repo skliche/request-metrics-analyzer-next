@@ -207,7 +207,7 @@ public class TransactionDrilldownPanel extends JPanel {
 			}
 			
 			final List<ChildNodeStatisticsEntry> entries = new ArrayList<ChildNodeStatisticsEntry>(stats.values());
-			final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow, treeNode.getRmNode().getData(), entries, treeNode.getChildCount(), totalTimeChildren, totalZeroTimesChildren);
+			final ChildNodeStatisticsDialog panel = new ChildNodeStatisticsDialog(rootWindow.getMainFrame(), treeNode.getRmNode().getData(), entries, treeNode.getChildCount(), totalTimeChildren, totalZeroTimesChildren);
 			panel.setVisible(true);
 		}
 	}

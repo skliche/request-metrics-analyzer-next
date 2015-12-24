@@ -44,7 +44,7 @@ import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
-public class RequestMetricsGui extends JDialog implements Observer {
+public class RequestMetricsGui implements Observer {
 	public RequestMetricsGui() {
 		
 		}
@@ -64,6 +64,7 @@ public class RequestMetricsGui extends JDialog implements Observer {
 	private RMNode currentSelectedRootNode;
 	private TransactionDrilldownToolBar transactionDrilldownToolBar = new TransactionDrilldownToolBar();
 	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar();
+	private JFrame mainFrame = new JFrame("RM Records Log File Analysis Results");
 	
 	public Dimension getMinimumSize() {
 		return new Dimension(100, 800);
@@ -71,6 +72,14 @@ public class RequestMetricsGui extends JDialog implements Observer {
 
 	public Dimension getPreferredSize() {
 		return new Dimension(100, 800);
+	}
+	
+	public JFrame getMainFrame() {
+		return mainFrame;
+	}
+	
+	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
+		return transactionDrilldownToolBar;
 	}
 	
 	public void createAndShowGUI(final RmProcessor processor) {
@@ -94,7 +103,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		splitPane.setLeftComponent(listInternalFrame);
 		splitPane.setRightComponent(treeInternalFrame);
 		
-		JFrame mainFrame = new JFrame("RM Records Log File Analysis Results");
 		final JMenuBar menuBar = buildMenubar(mainFrame, processor);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -232,10 +240,6 @@ public class RequestMetricsGui extends JDialog implements Observer {
 		if(transactionDrilldownPanel != null) transactionDrilldownPanel.repaint();
 	}
 	
-	public TransactionDrilldownToolBar getTransactionDrilldownToolBar() {
-		return transactionDrilldownToolBar;
-	}
-
 	@Override
 	public void update(Observable o, Object event) {
 		if(event instanceof ParsingFileHasFinishedEvent) {

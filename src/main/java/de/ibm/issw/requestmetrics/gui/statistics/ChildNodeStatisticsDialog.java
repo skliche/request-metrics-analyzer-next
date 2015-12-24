@@ -12,6 +12,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -46,7 +47,7 @@ public class ChildNodeStatisticsDialog extends JDialog {
 	
 	private String lastSelection;
 
-	public ChildNodeStatisticsDialog(JDialog rootWindow, RMRecord root, List<ChildNodeStatisticsEntry> entries, long numberOfChildren,
+	public ChildNodeStatisticsDialog(JFrame rootWindow, RMRecord root, List<ChildNodeStatisticsEntry> entries, long numberOfChildren,
 			long totalTimeChildren, long totalZeroTimesChildren) {
 		super(rootWindow, null, true);
 		final String dialogTitle = String.format("Statistics for record '%s' - '%s'", root.getCurrentCmp().getReqid(), root.getDetailCmp());
