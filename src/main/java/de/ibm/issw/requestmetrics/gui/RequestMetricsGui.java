@@ -16,7 +16,6 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.Logger;
 
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
@@ -45,22 +44,25 @@ import de.ibm.issw.requestmetrics.model.RmRootCase;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui implements Observer {
+	// Logging and utilities
 	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
-	private List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
-	private StringBuffer invalidFiles = new StringBuffer();
-	// GUI elements
-	private static final JInternalFrame transactionDrilldownScrollFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
-	private static final JInternalFrame rootCaseScrollFrame = new JInternalFrame("Root Cases", true, false, true, true);
-	
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss.S");
 	
+	// Variables holding business state
 	private RmProcessor processor;
-	private static JTable rootCaseTable;
+	private List<NonUniqueRequestIdEvent> nonUniqueReqIds = new ArrayList<NonUniqueRequestIdEvent>();
+	private StringBuffer invalidFiles = new StringBuffer();
+	private RMNode currentSelectedRootNode;
+
+	// GUI elements
+	private final JInternalFrame transactionDrilldownScrollFrame = new JInternalFrame("Transaction Drilldown", true, false, true, true);
+	private final JInternalFrame rootCaseScrollFrame = new JInternalFrame("Root Cases", true, false, true, true);
+	
+	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar(this);
+	private JTable rootCaseTable;
 	private ProgressBarDialog fileProcessingDialog;
 	private TransactionDrilldownPanel transactionDrilldownPanel;
-	private RMNode currentSelectedRootNode;
 	private TransactionDrilldownToolBar transactionDrilldownToolBar = new TransactionDrilldownToolBar();
-	private RootCaseToolBar rootCaseToolBar = new RootCaseToolBar();
 	private JFrame mainFrame = new JFrame("RM Records Log File Analysis Results");
 	
 	public Dimension getMinimumSize() {
@@ -182,7 +184,7 @@ public class RequestMetricsGui implements Observer {
 		return menu;
 	}
 	
-	public static void setTitleRootCaseFrame(int numberOfRootCases) {
+	public void setTitleRootCaseFrame(int numberOfRootCases) {
 		rootCaseScrollFrame.setTitle(numberOfRootCases + " Root Cases");
 	}
 

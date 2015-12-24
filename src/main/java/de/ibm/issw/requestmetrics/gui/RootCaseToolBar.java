@@ -44,8 +44,10 @@ public class RootCaseToolBar extends JToolBar{
 	private static Date startLogTimeStamp;
 	private static Date endLogTimeStamp;
 	private Set<String> types;
+	private RequestMetricsGui gui;
 	
-	public RootCaseToolBar() {
+	public RootCaseToolBar(RequestMetricsGui gui) {
+		this.gui = gui;
 		setFloatable(false);
 		setLayout(new FlowLayout(FlowLayout.LEFT));
 		
@@ -177,7 +179,7 @@ public class RootCaseToolBar extends JToolBar{
 		clearFiltersButton.setEnabled(true);
 		startDatePicker.setEnabled(true);
 		endDatePicker.setEnabled(true);
-		rootCaseFilter = new RootCaseFilter(rootCaseTable);
+		rootCaseFilter = new RootCaseFilter(rootCaseTable, gui);
 
 		// set start- and end-date after rootCaseFilter is initialized
 		if(rootCaseTable != null && rootCaseTable.getModel() != null) {

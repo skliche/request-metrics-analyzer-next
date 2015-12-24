@@ -22,14 +22,16 @@ public class RootCaseFilter{
 	private RowFilter<RootCaseTableModel, Object> typeFilter;
 	private List<RowFilter<RootCaseTableModel, Object>> filters = new ArrayList<RowFilter<RootCaseTableModel, Object>>();
 	private JTable rootCaseTable;
+	private RequestMetricsGui gui;
 	
 	private final int TIMESTAMP_COLUMN = 1;
 	private final int ELAPSED_TIME_COLUMN = 2;
 	private final int TYPE_COLUMN = 3;
 	private final int DETAIL_COLUMN = 5;
 	
-	public RootCaseFilter(JTable rootCaseTable) {
+	public RootCaseFilter(JTable rootCaseTable, RequestMetricsGui gui) {
 		this.rootCaseTable = rootCaseTable;
+		this.gui = gui;
 	}
 	
 	/**
@@ -170,6 +172,6 @@ public class RootCaseFilter{
 		sorter.setRowFilter(compoundFilter);
 		
 		// update the number of root cases in the frame title
-		RequestMetricsGui.setTitleRootCaseFrame(rootCaseTable.getRowCount());
+		gui.setTitleRootCaseFrame(rootCaseTable.getRowCount());
 	}
 }
