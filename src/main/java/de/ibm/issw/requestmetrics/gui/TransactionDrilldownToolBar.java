@@ -79,6 +79,7 @@ public class TransactionDrilldownToolBar extends JToolBar{
 		highestExecTimeButton.setEnabled(true);
 		mostDirectChildrenTimeButton.setEnabled(true);
 		
+		//TODO: fix this - the enable method should not need a reference to the transactionDrilldownPanel
 		this.transactionDrilldownPanel = transactionDrilldownPanel;
 	}
 	
