@@ -95,6 +95,7 @@ public class RequestMetricsGui implements Observer {
 		setTitleRootCaseFrame("Transactions");
 		
 		setTitleTransactionDrilldownFrame("Transaction Drilldown");
+		transactionDrilldownScrollFrame.add(transactionDrilldownToolBar, BorderLayout.NORTH);
 		
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rootCaseScrollFrame, transactionDrilldownScrollFrame);
 		splitPane.setResizeWeight(0.3);
