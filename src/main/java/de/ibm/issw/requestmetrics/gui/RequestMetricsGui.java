@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -33,11 +32,13 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.NonUniqueRequestIdEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
-import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
 import de.ibm.issw.requestmetrics.gui.comparator.ElapsedTimeComparator;
@@ -47,7 +48,7 @@ import de.ibm.issw.requestmetrics.model.RmRootCase;
 @SuppressWarnings("serial")
 public class RequestMetricsGui implements Observer {
 	// Logging and utilities
-	private static final Logger LOG = Logger.getLogger(RequestMetricsGui.class.getName());
+	public static final Logger LOG = LoggerFactory.getLogger(RequestMetricsGui.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss.S");
 	
 	// Variables holding business state
@@ -211,7 +212,7 @@ public class RequestMetricsGui implements Observer {
 					int row = rootCaseTable.getSelectedRow();
 					if(row != -1) { //if no row is selected row = -1 (and we do nothing)
 						final RmRootCase currentSelectedRootCase = processor.getRootCases().get(rootCaseTable.convertRowIndexToModel(row));
-						LOG.fine("user selected use case " + currentSelectedRootCase.getRmNode().toString());
+						LOG.debug("user selected use case " + currentSelectedRootCase.getRmNode().toString());
 						
 						currentSelectedRootNode = currentSelectedRootCase.getRmNode();
 						currentSelectedRootNode.calculateExecutionTime();
@@ -248,12 +249,7 @@ public class RequestMetricsGui implements Observer {
 	
 	@Override
 	public void update(Observable o, Object event) {
-		if(event instanceof ParsingFileHasFinishedEvent) {
-			//create a log entry if parsing of a file has finished
-			ParsingFileHasFinishedEvent concreteEvent = (ParsingFileHasFinishedEvent) event;
-			LOG.info("parsing of file " + concreteEvent.getFileName() + " has finished.");
-		} 
-		else if (event instanceof PercentageIncreasedEvent) {
+		if (event instanceof PercentageIncreasedEvent) {
 			//update progress bar
 			PercentageIncreasedEvent concreteEvent = (PercentageIncreasedEvent) event;
 			fileProcessingDialog.update(concreteEvent);
@@ -262,7 +258,6 @@ public class RequestMetricsGui implements Observer {
 			/*notify user when parsing of all Files has finished, show which files could not be parsed, reset
 			 *the internal window frames and dispose the progress bar dialog
 			 */
-			LOG.info("parsing of all files has finished.");
 			if (invalidFiles.length() > 0)
 				JOptionPane.showMessageDialog(null, "The following files are invalid and could not be parsed:" + invalidFiles);
 			fileProcessingDialog.dispose();
@@ -276,7 +271,7 @@ public class RequestMetricsGui implements Observer {
 		else if (event instanceof LogParsingTypeEvent) {
 			//create a log info about the type of a loaded file
 			LogParsingTypeEvent concreteEvent = (LogParsingTypeEvent) event;
-			String typeInfo = String.format("The loaded file '%s' was of type '%s'\n", concreteEvent.getFileName(),concreteEvent.getType());
+			String typeInfo = String.format("The loaded file '%s' was of type '%s'", concreteEvent.getFileName(),concreteEvent.getType());
 			LOG.info(typeInfo);
 		} 
 		else if (event instanceof NonUniqueRequestIdEvent) {
@@ -284,6 +279,8 @@ public class RequestMetricsGui implements Observer {
 			NonUniqueRequestIdEvent concreteEvent = (NonUniqueRequestIdEvent) event;
 			nonUniqueReqIds.add(concreteEvent);
 			LOG.info("There are" + nonUniqueReqIds.size() + "non unique request IDs");
-		} 
+		} else {
+			LOG.info("unhandled event of type " + event.getClass());
+		}
 	}
 }

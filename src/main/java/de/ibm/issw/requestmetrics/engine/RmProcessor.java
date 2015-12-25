@@ -4,7 +4,6 @@ import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,10 +14,11 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
@@ -30,7 +30,7 @@ import de.ibm.issw.requestmetrics.util.StringPool;
 
 public class RmProcessor extends Observable implements Processor{
 	// Logging and utilities
-	private static final Logger LOG = Logger.getLogger(RmProcessor.class.getName());
+	public static final Logger LOG = LoggerFactory.getLogger(RmProcessor.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
 	// Parsing 
@@ -68,10 +68,12 @@ public class RmProcessor extends Observable implements Processor{
 	@Override
 	public void beforeSingleFileParsed(File file) {
 		this.lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
+		LOG.info("About to parse file " + file.getName());
 	}
 
 	@Override
 	public void afterSingleFileParsed(File file) {
+		LOG.info("Finished to parse file " + file.getName());
 		if (rootCases.size() == 0 && allNodes.size() == 0){
 			//notify observers that the file can not be processed because no metrics data was found
 			setChanged();
@@ -152,7 +154,7 @@ public class RmProcessor extends Observable implements Processor{
 				recordDate = sdf.parse(timestamp);
 			} catch (ParseException e) {
 				e.printStackTrace();
-				LOG.severe("could not parse the log timestamp: " + timestamp);
+				LOG.error("could not parse the log timestamp: " + timestamp);
 			}
 			
 			final RMComponent currentCmp = new RMComponent(currentVersion, currentIp, currentTimestamp, currentPid, currentRequestId, currentEvent);
@@ -237,13 +239,13 @@ public class RmProcessor extends Observable implements Processor{
 	 */
 	@SuppressWarnings("unchecked")
 	public List<RMNode> findByRmRecId(long nodeId) {
-		if(LOG.isLoggable(Level.INFO)) {
-			LOG.log(Level.INFO, "findByNodeId with record id " + nodeId);
+		if(LOG.isInfoEnabled()) {
+			LOG.info("findByNodeId with record id " + nodeId);
 		}
 		final RMNode node = allNodes.get(nodeId);
 		List<RMNode> result = Collections.EMPTY_LIST;
 		if(node == null) {
-			LOG.warning("findByRmRecId was called with an invalid node id");
+			LOG.warn("findByRmRecId was called with an invalid node id");
 		} else {
 			result = allNodes.get(nodeId).getChildren();
 		}

@@ -8,15 +8,16 @@ import java.io.LineNumberReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
 
 public class FileHandler extends Observable {
-	private static final Logger LOG = Logger.getLogger(FileHandler.class.getName());
-	
+	public static final Logger LOG = LoggerFactory.getLogger(FileHandler.class);
 	private Processor processor;
 	private File currentFile;
 	
