@@ -27,7 +27,7 @@ public class FileHandler extends Observable {
 	private Long totalProcessedLines = 0l;
 	private Integer processedFiles = 0;
 	
-	public FileHandler(RmProcessor processor) {
+	public FileHandler(Processor processor) {
 		this.processor = processor;
 	}
 
