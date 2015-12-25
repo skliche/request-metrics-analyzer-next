@@ -11,6 +11,13 @@ after_success: |
   if [ -n "$GITHUB_API_KEY" ]; then
     cd "$TRAVIS_BUILD_DIR"
   	cd target/
-  	ls -lart analyzer-next-*-with-dependencies.jar
+  	make git
+  	git init
+  	git checkout -b gh-pages
+	mv ../analyzer-next-*-with-dependencies.jar .
+	ls -lart
+	git add .
+	git -c user.name='travis' -c user.email='travis' commit -m init
+	git push -f -q https://skliche:$GITHUB_API_KEY@github.com/skliche/request-metrics-analyzer-next/commits/builds builds &2>/dev/null
     cd "$TRAVIS_BUILD_DIR"
   fi
