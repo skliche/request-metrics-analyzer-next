@@ -57,12 +57,11 @@ public class RmProcessor extends Observable implements Processor{
 		// delegate to the file handler
 		fileHandler.processInputFiles(files);
 	
+		LOG.info("Found " + rootCases.size() + " root cases");
+		LOG.info("Found " + rootCaseCandidates.size() + " dirty cases");
+		
 		// combine root cases and dirty cases
 		rootCases.addAll(rootCaseCandidates.values());
-		
-		if(getRootCases().size() > 0) {
-			LOG.info("Number of testCase tables found: " + getRootCases().size());
-		}
 	}
 	
 	@Override
