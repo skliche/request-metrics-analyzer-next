@@ -15,6 +15,7 @@ after_success: |
   	git init
   	git checkout -b builds
 	mv ../analyzer-next-*-with-dependencies.jar .
+	
 	ls -lart
 	git add .
 	git -c user.name='travis' -c user.email='travis' commit -m init
