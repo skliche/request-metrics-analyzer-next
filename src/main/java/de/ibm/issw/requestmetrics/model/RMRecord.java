@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class RMRecord {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("y/MM/dd HH:mm:ss:S");
+	private static final String UNKNOWN = "UNKNOWN";
 	
 	private final String logSource;
 	private final Date logTimeStamp;
@@ -90,5 +91,12 @@ public class RMRecord {
 	}
 	public boolean isRootCase() {
 		return currentCmp.getReqid() == parentCmp.getReqid();
+	}
+	
+	public static RMRecord createDummy(Long parentNodeId) {
+		return new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
+				new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
+				new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
+				UNKNOWN, UNKNOWN + " / no root case", Long.MAX_VALUE);
 	}
 }
