@@ -6,3 +6,11 @@ branches:
     - master
 before_install: 'mvn -version'
 install: 'mvn clean install -Pfull -DskipTests'
+
+after_success: |
+  if [ -n "$GITHUB_API_KEY" ]; then
+    cd "$TRAVIS_BUILD_DIR"
+  	cd target/
+  	ls analyzer-next-*-with-dependencies.jar
+    cd "$TRAVIS_BUILD_DIR"
+  fi
