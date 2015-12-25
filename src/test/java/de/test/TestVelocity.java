@@ -34,7 +34,7 @@ public class TestVelocity {
 		context.put("text", "This is my dynamic text");
 		context.put("carList", carList);
 
-		Template t = ve.getTemplate("./templates/TestTemplate.vm");
+		Template t = ve.getTemplate("./src/test/resources/templates/TestTemplate.vm");
 
 		StringWriter writer = new StringWriter();
 		t.merge(context, writer);
