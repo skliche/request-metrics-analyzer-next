@@ -12,6 +12,7 @@ after_success: |
     cd "$TRAVIS_BUILD_DIR"
   	cd target/
   	mkdir git
+    cd git
   	git init
     git checkout -b builds
     mv ../analyzer-next-*-with-dependencies.jar .
