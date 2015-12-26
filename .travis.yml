@@ -18,5 +18,5 @@ after_success: |
     mv ../analyzer-next-*-with-dependencies.jar .
     git add .
     git -c user.name='travis' -c user.email='travis' commit -m bulild
-    git push -f -q https://skliche:$GITHUB_API_KEY@github.com/skliche/request-metrics-analyzer-next/commits/builds builds &2>/dev/null
+    git push -f -q https://skliche:$GITHUB_API_KEY@github.com/skliche/request-metrics-analyzer-next.git builds &2>/dev/null
   fi
