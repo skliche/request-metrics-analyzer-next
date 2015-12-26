@@ -13,11 +13,4 @@ after_success: |
   	cd target/
   	make git
   	git init
-  	git checkout -b builds
-	  mv ../analyzer-next-*-with-dependencies.jar .
-  	ls -lart
-	  git add .
-	  git -c user.name='travis' -c user.email='travis' commit -m init
-	  git push -f -q https://skliche:$GITHUB_API_KEY@github.com/skliche/request-metrics-analyzer-next/commits/builds builds &2>/dev/null
-    cd "$TRAVIS_BUILD_DIR"
   fi
