@@ -15,8 +15,8 @@ after_success: |
     cd git
   	git init
     git checkout -b builds
-    ls -lart
     mv ../analyzer-next-*-with-dependencies.jar .
     git add .
     git -c user.name='travis' -c user.email='travis' commit -m bulild
+    git push -f -q https://skliche:$GITHUB_API_KEY@github.com/skliche/request-metrics-analyzer-next/commits/builds builds &2>/dev/null
   fi
