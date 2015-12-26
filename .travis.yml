@@ -11,6 +11,8 @@ after_success: |
   if [ -n "$GITHUB_API_KEY" ]; then
     cd "$TRAVIS_BUILD_DIR"
   	cd target/
-  	make git
+  	mkdir git
   	git init
+    git checkout -b builds
+    mv ../analyzer-next-*-with-dependencies.jar .
   fi
