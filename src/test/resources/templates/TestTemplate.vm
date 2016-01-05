@@ -15,5 +15,6 @@
           #set( $count = $count + 1 )
         #end
       </TABLE>
+      <img src="data:image/png;base64,$pieChart" alt="$pieChartAlt" />
     </BODY>
   </HTML>
