@@ -5,6 +5,9 @@ For bugs and feature requests navigate to the [issues section](https://github.co
 
 [![Build Status](https://travis-ci.org/skliche/request-metrics-analyzer-next.svg)](https://travis-ci.org/skliche/request-metrics-analyzer-next)
 
+## Download executable ##
+Our latest build can be downloaded from the [build branch](https://github.com/skliche/request-metrics-analyzer-next/tree/builds).
+
 ## Importing the project into eclipse ##
 * Open Eclipse and select "File" > "Import"
 * In the wizard, select "Maven" > "Existing Maven Projects" and click next
