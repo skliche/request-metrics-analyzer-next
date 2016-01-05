@@ -3,7 +3,6 @@ package de.ibm.issw.requestmetrics.gui;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -16,6 +15,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.BorderFactory;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -29,6 +29,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
@@ -112,20 +114,24 @@ public class RequestMetricsGui implements Observer {
 	}
 
 
-	private JMenuBar buildMenubar(JFrame mainFrame, final RmProcessor processor) {
+	private JMenuBar buildMenubar(final JFrame mainFrame, final RmProcessor processor) {
 		JMenuBar menu = new JMenuBar();
 		
 		JMenu fileMenu = new JMenu("File");
-		final FileDialog fd = new FileDialog(mainFrame, "Load Scenario File", FileDialog.LOAD);
-		fd.setMultipleMode(true);
+		final JFileChooser fc = new JFileChooser();
+		FileFilter filter = new FileNameExtensionFilter("Log Files (*.log, *.txt)", "log", "txt");
+		fc.setFileFilter(filter);
+		fc.setMultiSelectionEnabled(true);
+		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		
 		JMenuItem fileLoadScenarioItem = new JMenuItem("Load Scenario");
 		fileLoadScenarioItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				fd.setVisible(true);
-				final File[] files = fd.getFiles();
-				if(files.length == 0) return;
+				int action = fc.showOpenDialog(mainFrame);
+				
+				final File[] files = fc.getSelectedFiles();
+				if(action != JFileChooser.APPROVE_OPTION || files.length == 0) return;
 				
 				processor.reset();
 				invalidFiles = new StringBuffer();

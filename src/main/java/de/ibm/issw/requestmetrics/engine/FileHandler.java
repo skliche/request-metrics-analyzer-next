@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import de.ibm.issw.requestmetrics.engine.events.ParsingAllFilesHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.ParsingFileHasFinishedEvent;
 import de.ibm.issw.requestmetrics.engine.events.PercentageIncreasedEvent;
+import de.ibm.issw.requestmetrics.util.FileWalker;
 
 public class FileHandler extends Observable {
 	public static final Logger LOG = LoggerFactory.getLogger(FileHandler.class);
@@ -36,7 +39,7 @@ public class FileHandler extends Observable {
 	 * Adds the number of the lines for the current file to the total number of lines.
 	 * @param files Array of all files that were selected to parse
 	 */
-	public void preProcessInputFiles(File[] files) {
+	public void preProcessInputFiles(List<File> files) {
 		try{
 			fileLinesMap = new HashMap<String, Integer>();
 			totalLinesAmount = 0l;
@@ -72,8 +75,25 @@ public class FileHandler extends Observable {
 	}
 	
 	public void processInputFiles(File[] files) {
-		preProcessInputFiles(files);
-		for (File file : files) {
+		List<File> allFiles = new ArrayList<File>();
+		for (File element : files) {
+			if(element.isFile()) {
+				// case: element is a file -> add it to the list of all files
+				allFiles.add(element);
+			} else if(element.isDirectory()) {
+				// case: element is a directory -> get all files via FileWalker and add them to the list of all files
+				try {
+					FileWalker walker = new FileWalker(element.getAbsolutePath());
+					allFiles.addAll(walker.getAllFiles());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		preProcessInputFiles(allFiles);
+		for (File file : allFiles) {
 			currentFile = file;
 			processInputFile (file);
 		}
