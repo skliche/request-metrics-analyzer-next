@@ -60,7 +60,7 @@ public class TestVelocity {
 		// merge template with context data and write result to HTML file
 		FileWriter writer = null;
 		try {
-			writer = new FileWriter("./src/test/html/TestVelocityOutput.html");
+			writer = new FileWriter("./target/TestVelocityOutput.html");
 			t.merge(context, writer);
 			writer.close();
 		} catch (IOException e) {
