@@ -11,10 +11,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileWalker extends SimpleFileVisitor<Path> {
+public class FileDetector extends SimpleFileVisitor<Path> {
 	private List<File> allFiles = new ArrayList<File>();
 	
-	public FileWalker(String path) throws Exception {
+	public FileDetector(String path) throws Exception {
 		Files.walkFileTree(Paths.get(path), this);
 	}
 

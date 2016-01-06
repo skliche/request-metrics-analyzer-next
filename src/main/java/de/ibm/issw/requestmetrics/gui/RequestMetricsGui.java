@@ -30,7 +30,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
@@ -46,6 +45,7 @@ import de.ibm.issw.requestmetrics.engine.events.UnsupportedFileEvent;
 import de.ibm.issw.requestmetrics.gui.comparator.ElapsedTimeComparator;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
+import de.ibm.issw.requestmetrics.util.FileTypeFilter;
 
 @SuppressWarnings("serial")
 public class RequestMetricsGui implements Observer {
@@ -119,8 +119,10 @@ public class RequestMetricsGui implements Observer {
 		
 		JMenu fileMenu = new JMenu("File");
 		final JFileChooser fc = new JFileChooser();
-		FileFilter filter = new FileNameExtensionFilter("Log Files (*.log, *.txt)", "log", "txt");
-		fc.setFileFilter(filter);
+		FileFilter logFilter = new FileTypeFilter(".log", "Log Files");
+		FileFilter zipFilter = new FileTypeFilter(".zip", "ZIP Files");
+		fc.addChoosableFileFilter(logFilter);
+		fc.addChoosableFileFilter(zipFilter);
 		fc.setMultiSelectionEnabled(true);
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		
@@ -261,6 +263,7 @@ public class RequestMetricsGui implements Observer {
 			fileProcessingDialog.update(concreteEvent);
 		} 
 		else if(event instanceof ParsingAllFilesHasFinishedEvent) {
+			LOG.debug("Parsing of all files finished. The following were processed: " + ((ParsingAllFilesHasFinishedEvent)event).getFiles().toString());
 			/*notify user when parsing of all Files has finished, show which files could not be parsed, reset
 			 *the internal window frames and dispose the progress bar dialog
 			 */
