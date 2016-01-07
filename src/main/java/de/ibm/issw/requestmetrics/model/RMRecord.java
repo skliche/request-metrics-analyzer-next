@@ -93,6 +93,10 @@ public class RMRecord {
 		return currentCmp.getReqid() == parentCmp.getReqid();
 	}
 	
+	public boolean isDummy() {
+		return UNKNOWN.equals(typeCmp);
+	}
+	
 	public static RMRecord createDummy(Long parentNodeId) {
 		return new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
 				new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 

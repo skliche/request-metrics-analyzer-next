@@ -85,8 +85,19 @@ public class RmProcessor extends Observable implements Processor{
 	public void handleLine(String line, File file) {
 		final RMRecord record = processSingleLine(line, file);
 		if(record != null) {
-			// process the record 
-			addRmRecordToDataset(record);
+			// perform checks
+			// check if a record with the current record id is already present in the dataset
+			// if that is the case we would end up in loops and deadlocks
+			//TODO: do not rely on IDs of the log data; instead use internally generated ones to ensure integrity
+			Long recId = record.getCurrentCmp().getReqid();
+			RMNode prevRevord = allNodes.get(recId);
+			if(prevRevord != null && !prevRevord.getData().isDummy()) {
+				LOG.warn("The record with the current id " + recId + " was previously added. This can create deadlocks/loops in the query engine!");
+				LOG.debug("Dumping the record: " + record);
+			} else {
+				// process the record 
+				addRmRecordToDataset(record);
+			}
 		}
 	}
 	
