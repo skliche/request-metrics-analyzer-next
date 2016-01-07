@@ -1,14 +1,11 @@
 package de.ibm.issw.requestmetrics.engine;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
@@ -26,18 +23,22 @@ import de.ibm.issw.requestmetrics.model.RMComponent;
 import de.ibm.issw.requestmetrics.model.RMNode;
 import de.ibm.issw.requestmetrics.model.RMRecord;
 import de.ibm.issw.requestmetrics.model.RmRootCase;
+import de.ibm.issw.requestmetrics.util.DateParser;
 import de.ibm.issw.requestmetrics.util.StringPool;
 
 public class RmProcessor extends Observable implements Processor{
 	// Logging and utilities
 	public static final Logger LOG = LoggerFactory.getLogger(RmProcessor.class);
-	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy H:m:s:S z", Locale.US);
 
 	// Parsing 
 	private static final String REGEX_GREPPED = "([^:]*):\\[([^\\]]*)\\] (\\w+) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
-	private static final String REGEX_RAW = "\\[([^\\]\\*]*)\\] (\\w{8}) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN_GREPPED = Pattern.compile(REGEX_GREPPED);
+
+	private static final String REGEX_RAW = "\\[([^\\]\\*]*)\\] (\\w{8}) PmiRmArmWrapp I\\s+PMRM0003I:\\s+parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+)";	
 	private static final Pattern PATTERN_RAW = Pattern.compile(REGEX_RAW);
+	
+	private static final String PLUGIN_REGEX_GREPPED = "([^:]*):\\[([^\\]]*)\\] (\\w+) \\w+ - PLUGIN:  parent:ver=(\\d),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(\\w+)\\s-\\scurrent:ver=([^,]+),ip=([^,]+),time=([^,]+),pid=([^,]+),reqid=([^,]+),event=(.*) type=(.*) detail=(.*) elapsed=(\\w+) bytesIn=(\\w+) bytesOut=(\\w+)";
+	private static final Pattern PATTERN_PLUGIN_REGEX_GREPPED = Pattern.compile(PLUGIN_REGEX_GREPPED);
 	
 	private String lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
 
@@ -101,6 +102,7 @@ public class RmProcessor extends Observable implements Processor{
 		// parse the log using a REGEX, Strings are processed by a string pool
 		final Matcher logMatcherGrepped = PATTERN_GREPPED.matcher(line);
 		final Matcher logMatcherRaw = PATTERN_RAW.matcher(line);
+		final Matcher logMatcherPluginGrepped = PATTERN_PLUGIN_REGEX_GREPPED.matcher(line);
 		
 		String currentParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
 		int groupNr = 1;
@@ -117,6 +119,10 @@ public class RmProcessor extends Observable implements Processor{
 			currentParsingType = LogParsingTypeEvent.TYPE_RAW;
 			currentMatcher = logMatcherRaw;
 			logFileName = file.getName();
+		} else if(logMatcherPluginGrepped.matches()) {
+			currentParsingType = LogParsingTypeEvent.TYPE_PLUGIN_GREPPED;
+			currentMatcher = logMatcherPluginGrepped;
+			logFileName = StringPool.intern(logMatcherPluginGrepped.group(groupNr++));
 		}
 		
 		//check if the parsing type changed and notify observers if it has
@@ -148,13 +154,7 @@ public class RmProcessor extends Observable implements Processor{
 			final String detail = StringPool.intern(currentMatcher.group(groupNr++));
 			final Long currentElapsed = Long.parseLong(currentMatcher.group(groupNr++));
 			
-			Date recordDate = null; //[5/28/15 11:10:39:507 EDT]
-			try {
-				recordDate = sdf.parse(timestamp);
-			} catch (ParseException e) {
-				e.printStackTrace();
-				LOG.error("could not parse the log timestamp: " + timestamp);
-			}
+			Date recordDate = DateParser.parseTimestamp(timestamp);
 			
 			final RMComponent currentCmp = new RMComponent(currentVersion, currentIp, currentTimestamp, currentPid, currentRequestId, currentEvent);
 			final RMComponent parentCmp = new RMComponent(parentVersion, parentIp, parentTimestamp, parentPid, parentRequestId, parentEvent);
