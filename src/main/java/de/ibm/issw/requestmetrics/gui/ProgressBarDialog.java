@@ -16,6 +16,7 @@ public class ProgressBarDialog extends JDialog {
 	private JProgressBar progressBarCurrentFile = new JProgressBar(0, 100);
 	private JLabel currentFileLabel = new JLabel();
 	private JLabel allFilesLabel = new JLabel();
+	final private static int CHARS_TO_SHOW = 45;
 
 	public ProgressBarDialog() {
 		Border pbAllFilesBorder = BorderFactory.createTitledBorder("Progress of processing all files");
@@ -52,9 +53,13 @@ public class ProgressBarDialog extends JDialog {
 	 */
 	public void update(PercentageIncreasedEvent event) {
 		progressBarCurrentFile.setValue(event.getPercentCurrentFileProcessed());
-		progressBarCurrentFile.setName(event.getFileName());
+		String fileName = event.getFileName();
+		if (fileName == null || fileName.length() < CHARS_TO_SHOW) {
+		    currentFileLabel.setText(fileName);
+		} else {
+			currentFileLabel.setText("...".concat(fileName.substring(fileName.length() - CHARS_TO_SHOW)));
+		}
 		progressBarAllFiles.setValue(event.getPercentAllFilesProcessed());
-		currentFileLabel.setText(event.getFileName());
 		allFilesLabel.setText(event.getFilesProcessed() + " / " + event.getTotalFiles());
 	}
 }
