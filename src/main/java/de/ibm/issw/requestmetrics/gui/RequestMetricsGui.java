@@ -10,7 +10,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -36,6 +38,7 @@ import javax.swing.table.TableCellRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.ibm.issw.requestmetrics.Configuration;
 import de.ibm.issw.requestmetrics.engine.RmProcessor;
 import de.ibm.issw.requestmetrics.engine.events.LogParsingTypeEvent;
 import de.ibm.issw.requestmetrics.engine.events.NonUniqueRequestIdEvent;
@@ -179,6 +182,32 @@ public class RequestMetricsGui implements Observer {
 							// initially sort root cases by elapsed time descending
 							Collections.sort(rootCases, new ElapsedTimeComparator());
 							Collections.reverse(rootCases);
+							
+							if (Configuration.ROOT_DETAILS_FIND_UNIQUE_URIS) {
+								for (RmRootCase rootCase : rootCases) {
+									RMNode rootNode = rootCase.getRmNode();
+									processRootRecord(rootNode);
+								}
+							}
+						}
+					}
+
+					private void processRootRecord(RMNode rootNode) {
+						LinkedHashMap<String, RMNode> uniqueUris = new LinkedHashMap<String, RMNode>();
+						processChildren(rootNode.children, uniqueUris);
+						for (Entry<String, RMNode> uri : uniqueUris.entrySet()) {
+							rootNode.rmData.setDetailCmp(rootNode.rmData.getDetailCmp() + " > " + uri.getKey());
+						}
+					}
+
+					private void processChildren(List<RMNode> children, LinkedHashMap<String, RMNode> uniqueUris) {
+						if (children != null) {
+							for (RMNode child : children) {
+								if ("URI".equals(child.rmData.getTypeCmp())) {
+									uniqueUris.putIfAbsent(child.rmData.getDetailCmp(), child);
+								}
+								processChildren(child.children, uniqueUris);
+							}
 						}
 					}
 				}).start();
