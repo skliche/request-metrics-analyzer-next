@@ -204,7 +204,10 @@ public class RequestMetricsGui implements Observer {
 						if (children != null) {
 							for (RMNode child : children) {
 								if ("URI".equals(child.rmData.getTypeCmp())) {
-									uniqueUris.putIfAbsent(child.rmData.getDetailCmp(), child);
+									String key = child.rmData.getDetailCmp();
+									if (!uniqueUris.containsKey(key)) {
+										uniqueUris.putIfAbsent(key, child);
+									}
 								}
 								processChildren(child.children, uniqueUris);
 							}
