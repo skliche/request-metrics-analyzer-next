@@ -128,6 +128,7 @@ public class RequestMetricsGui implements Observer {
 		fc.addChoosableFileFilter(zipFilter);
 		fc.setMultiSelectionEnabled(true);
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		fc.setCurrentDirectory(Configuration.getFileOpenDirectory());
 		
 		JMenuItem fileLoadScenarioItem = new JMenuItem("Load Scenario");
 		fileLoadScenarioItem.addActionListener(new ActionListener() {
@@ -137,6 +138,8 @@ public class RequestMetricsGui implements Observer {
 				
 				final File[] files = fc.getSelectedFiles();
 				if(action != JFileChooser.APPROVE_OPTION || files.length == 0) return;
+				
+				Configuration.setFileOpenDirectory(fc.getCurrentDirectory());
 				
 				processor.reset();
 				invalidFiles = new StringBuffer();
