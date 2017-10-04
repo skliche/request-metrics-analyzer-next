@@ -13,7 +13,7 @@ public class RMRecord {
 	private final RMComponent currentCmp;
 	private final RMComponent parentCmp;
 	private final String typeCmp;
-	private final String detailCmp;
+	private String detailCmp;
 	private final long elapsedTime;
 	
 	public RMRecord(String logSource, Date logTimestamp, String threadId, RMComponent currentCmp, RMComponent parentCmp,
@@ -38,6 +38,10 @@ public class RMRecord {
 
 	public String getDetailCmp() {
 		return this.detailCmp;
+	}
+	
+	public void setDetailCmp(String detailCmp) {
+		this.detailCmp = detailCmp;
 	}
 
 	public long getElapsedTime() {
