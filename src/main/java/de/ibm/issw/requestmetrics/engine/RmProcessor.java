@@ -224,7 +224,13 @@ public class RmProcessor extends Observable implements Processor{
 			
 			// in case there is no log entry for the root record, we create a dummy record
 			if(parentNode == null) {
-				RMRecord dummy = RMRecord.createDummy(parentNodeId, rmRecord.getParentCmp().getIp(), rmRecord.getParentCmp().getPid());
+				RMRecord dummy = RMRecord.createDummy(
+					rmRecord.getLogSource(),
+					rmRecord.getLogTimeStamp(),
+					parentNodeId,
+					rmRecord.getParentCmp().getIp(),
+					rmRecord.getParentCmp().getPid()
+				);
 				parentNode = new RMNode(dummy);
 				allNodes.put(dummy.getCurrentCmp(), parentNode);
 				

@@ -101,11 +101,11 @@ public class RMRecord {
 		return UNKNOWN.equals(typeCmp);
 	}
 	
-	public static RMRecord createDummy(Long parentRequestId, String parentIp, long parentPid) {
-		return new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
+	public static RMRecord createDummy(String logSource, Date time, Long parentRequestId, String parentIp, long parentPid) {
+		return new RMRecord(logSource, time, UNKNOWN, 
 				new RMComponent(0, parentIp, 0, parentPid, parentRequestId, UNKNOWN), 
 				new RMComponent(0, parentIp, 0, parentPid, parentRequestId, UNKNOWN), 
-				UNKNOWN, UNKNOWN + " / no root case", 0);
+				UNKNOWN, UNKNOWN + " / unknown parent event", 0);
 	}
 	
 	public void addElapsedTime(long additionalTime) {
