@@ -43,11 +43,11 @@ public class RmProcessor extends Observable implements Processor{
 	private String lastParsingType = LogParsingTypeEvent.TYPE_UNKNOWN;
 
 	// Internal data structures
-	private final Map<Long, RMNode> allNodes = new HashMap<Long, RMNode>();
+	private final Map<RMComponent, RMNode> allNodes = new HashMap<RMComponent, RMNode>();
 	private final List<RmRootCase> rootCases = new ArrayList<RmRootCase>();
 	private final Set<String> rootCaseTypes = new TreeSet<String>();
 	
-	private final Map<Long, RmRootCase> rootCaseCandidates = new HashMap<Long, RmRootCase>();
+	private final Map<RMComponent, RmRootCase> rootCaseCandidates = new HashMap<RMComponent, RmRootCase>();
 	private FileHandler fileHandler;
 	
 	public RmProcessor() {
@@ -90,7 +90,7 @@ public class RmProcessor extends Observable implements Processor{
 			// if that is the case we would end up in loops and deadlocks
 			//TODO: do not rely on IDs of the log data; instead use internally generated ones to ensure integrity
 			Long recId = record.getCurrentCmp().getReqid();
-			RMNode prevRevord = allNodes.get(recId);
+			RMNode prevRevord = allNodes.get(record.getCurrentCmp());
 			if(prevRevord != null && !prevRevord.getData().isDummy()) {
 				LOG.warn("The record with the current id " + recId + " was previously added. This can create deadlocks/loops in the query engine!");
 				LOG.debug("Dumping the record: " + record);
@@ -197,7 +197,10 @@ public class RmProcessor extends Observable implements Processor{
 		final RMNode rmNode = new RMNode(rmRecord);
 		
 		// remove the case from the candidates list if it was added before
-		rootCaseCandidates.remove(rmRecord.getCurrentCmp().getReqid());
+		RmRootCase removedRootCase = rootCaseCandidates.remove(rmRecord.getCurrentCmp());
+		if (removedRootCase != null) {
+			//LOG.info("addRmRecordToDataset removed " + removedRootCase);
+		}
 					
 		// if the current record-id is the same as the parent-id, then we have a root-record
 		if (rmRecord.isRootCase()) {
@@ -208,62 +211,45 @@ public class RmProcessor extends Observable implements Processor{
 			rootCaseTypes.add(rmRecord.getTypeCmp());
 		
 			// if we previously added a dummy record, we need to merge it with the real record
-			RMNode dummyNode = allNodes.get(rmRecord.getCurrentCmp().getReqid());
+			RMNode dummyNode = allNodes.get(rmRecord.getCurrentCmp());
 			if(dummyNode != null) {
 				rmNode.getChildren().addAll(dummyNode.getChildren());
 			}
-			allNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
+			allNodes.put(rmRecord.getCurrentCmp(), rmNode);
 		// otherwise the the current record is a child-record
 		} 
 		else {
 			final Long parentNodeId = rmRecord.getParentCmp().getReqid();
-			RMNode parentNode = allNodes.get(parentNodeId);
+			RMNode parentNode = allNodes.get(rmRecord.getParentCmp());
 			
 			// in case there is no log entry for the root record, we create a dummy record
 			if(parentNode == null) {
-				parentNode = new RMNode(RMRecord.createDummy(parentNodeId));
-				allNodes.put(parentNodeId, parentNode);
+				RMRecord dummy = RMRecord.createDummy(parentNodeId, rmRecord.getParentCmp().getIp(), rmRecord.getParentCmp().getPid());
+				parentNode = new RMNode(dummy);
+				allNodes.put(dummy.getCurrentCmp(), parentNode);
 				
-				rootCaseCandidates.put(parentNodeId, new RmRootCase(parentNode));
+				rootCaseCandidates.put(rmRecord.getParentCmp(), new RmRootCase(parentNode));
 				rootCaseTypes.add(parentNode.getData().getTypeCmp());
 			}
 			parentNode.getChildren().add(rmNode);
 
 			// If events are not in order, it can happen that we already have the current
 			// nodeId in the allNodes map. Then we need to merge with the previously created dummy.
-			final Long currentNodeId = rmRecord.getCurrentCmp().getReqid();
-			RMNode dirtyCurrentNode = allNodes.get(currentNodeId);
+			RMNode dirtyCurrentNode = allNodes.get(rmRecord.getCurrentCmp());
 			if(dirtyCurrentNode != null) {
 				rmNode.getChildren().addAll(dirtyCurrentNode.getChildren());
 			}
-			allNodes.put(rmRecord.getCurrentCmp().getReqid(), rmNode);
+			allNodes.put(rmRecord.getCurrentCmp(), rmNode);
+			
+			// If the parent record is a dummy record, add elapsed time to it
+			if (parentNode.getData().isDummy()) {
+				parentNode.getData().addElapsedTime(rmRecord.getElapsedTime());
+			}
 		}
-	}
-
-	/**
-	 * Find all nodes by the rm record id. The method looks in the parent node index.
-	 *  
-	 * @param nodeId the id of the rm record
-	 * @return a list of RMNodes that have a reference to the supplied node id
-	 * 
-	 */
-	@SuppressWarnings("unchecked")
-	public List<RMNode> findByRmRecId(long nodeId) {
-		if(LOG.isInfoEnabled()) {
-			LOG.info("findByNodeId with record id " + nodeId);
-		}
-		final RMNode node = allNodes.get(nodeId);
-		List<RMNode> result = Collections.EMPTY_LIST;
-		if(node == null) {
-			LOG.warn("findByRmRecId was called with an invalid node id");
-		} else {
-			result = allNodes.get(nodeId).getChildren();
-		}
-		return result;
 	}
 	
 	public void setElapsedTimeBorder(Long elapsedTimeBorder) {
-		//TODO: remove method
+		//TODO
 	}
 
 	public List<RmRootCase> getRootCases() {

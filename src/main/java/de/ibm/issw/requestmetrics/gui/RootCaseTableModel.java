@@ -14,10 +14,12 @@ public class RootCaseTableModel extends AbstractTableModel {
 	public static final int TIMESTAMP_COLUMN_INDEX = 1;
 	public static final int ELAPSEDTIME_COLUMN_INDEX = 2;
 	public static final int TYPE_COLUMN_INDEX = 3;
-	public static final int REQUESTID_COLUMN_INDEX = 4;
-	public static final int DETAILS_COLUMN_INDEX = 5;
+	public static final int IPADDRESS_COLUMN_INDEX = 4;
+	public static final int PID_COLUMN_INDEX = 5;
+	public static final int REQUESTID_COLUMN_INDEX = 6;
+	public static final int DETAILS_COLUMN_INDEX = 7;
 	
-	private static final String[] columnNames = {"File", "Timestamp", "Elapsed Time", "Type", "Request ID", "Details"};
+	private static final String[] columnNames = {"File", "Timestamp", "Elapsed Time", "Type", "IP Address", "PID", "Request ID", "Details"};
 
 	private List<RmRootCase> useCases;
 		
@@ -55,6 +57,8 @@ public class RootCaseTableModel extends AbstractTableModel {
 				case TIMESTAMP_COLUMN_INDEX: return record.getLogTimeStamp().getClass();
 				case ELAPSEDTIME_COLUMN_INDEX:	return Long.class;
 				case TYPE_COLUMN_INDEX: return record.getTypeCmp().getClass();
+				case IPADDRESS_COLUMN_INDEX: return String.class;
+				case PID_COLUMN_INDEX: return Long.class;
 				case REQUESTID_COLUMN_INDEX: return Long.class;
 				case DETAILS_COLUMN_INDEX: return record.getDetailCmp().getClass();
 				default: return String.class;
@@ -74,6 +78,8 @@ public class RootCaseTableModel extends AbstractTableModel {
 				case TIMESTAMP_COLUMN_INDEX: return record.getLogTimeStamp();
 				case ELAPSEDTIME_COLUMN_INDEX:	return record.getElapsedTime();
 				case TYPE_COLUMN_INDEX: return record.getTypeCmp();
+				case IPADDRESS_COLUMN_INDEX: return record.getCurrentCmp().getIp();
+				case PID_COLUMN_INDEX: return record.getCurrentCmp().getPid();
 				case REQUESTID_COLUMN_INDEX: return record.getCurrentCmp().getReqid();
 				case DETAILS_COLUMN_INDEX: return record.getDetailCmp();
 				default: return "Invalid column";

@@ -34,6 +34,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,17 +159,37 @@ public class RequestMetricsGui implements Observer {
 						if(rootCases != null && !rootCases.isEmpty()) {
 							final RootCaseTableModel rootCaseModel = new RootCaseTableModel(rootCases);
 							rootCaseTable.setModel(rootCaseModel);
-							// the width is currently hard coded and could be gathered from data in future
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMinWidth(215); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMaxWidth(515); 
+
+						    final TableColumnModel columnModel = rootCaseTable.getColumnModel();
+						    for (int column = 0; column < rootCaseTable.getColumnCount(); column++) {
+						        int width = 15;
+						        for (int row = 0; row < rootCaseTable.getRowCount(); row++) {
+						            TableCellRenderer renderer = rootCaseTable.getCellRenderer(row, column);
+						            Component comp = rootCaseTable.prepareRenderer(renderer, row, column);
+						            width = Math.max(comp.getPreferredSize().width + 10, width);
+						        }
+						        //if (width > 1000) {
+						        //    width=1000;
+						        //}
+						        columnModel.getColumn(column).setPreferredWidth(width);
+						    }
+							
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMinWidth(215); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.FILE_COLUMN_INDEX).setMaxWidth(515); 
 							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TIMESTAMP_COLUMN_INDEX).setMinWidth(170); 
 							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TIMESTAMP_COLUMN_INDEX).setMaxWidth(200); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMinWidth(100); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMaxWidth(100); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMinWidth(140); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMaxWidth(140); 
+							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMinWidth(80); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.ELAPSEDTIME_COLUMN_INDEX).setMaxWidth(100); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMinWidth(140); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.TYPE_COLUMN_INDEX).setMaxWidth(140); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.IPADDRESS_COLUMN_INDEX).setMinWidth(85); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.IPADDRESS_COLUMN_INDEX).setMaxWidth(85); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.PID_COLUMN_INDEX).setMinWidth(85); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.PID_COLUMN_INDEX).setMaxWidth(85); 
 							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMinWidth(85); 
-							rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMaxWidth(85); 
+							//rootCaseTable.getColumnModel().getColumn(RootCaseTableModel.REQUESTID_COLUMN_INDEX).setMaxWidth(85);
+							
+							rootCaseTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 							
 							// we write our own cell renderer for rendering the date values
 							TableCellRenderer tableCellRenderer = new DefaultTableCellRenderer() {
