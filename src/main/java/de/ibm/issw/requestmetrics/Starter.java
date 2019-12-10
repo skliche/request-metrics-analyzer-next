@@ -20,6 +20,7 @@ public class Starter {
 						parametererror = true;
 						break;
 					}
+					throw new IllegalArgumentException("-TIMEBORDER not implemented");
 				}
 			}
 		}

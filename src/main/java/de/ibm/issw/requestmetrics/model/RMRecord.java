@@ -14,7 +14,7 @@ public class RMRecord {
 	private final RMComponent parentCmp;
 	private final String typeCmp;
 	private String detailCmp;
-	private final long elapsedTime;
+	private long elapsedTime;
 	
 	public RMRecord(String logSource, Date logTimestamp, String threadId, RMComponent currentCmp, RMComponent parentCmp,
 			String typeCmp, String detailCmp, long elapsedTime) {
@@ -94,17 +94,21 @@ public class RMRecord {
 		return sb.toString();
 	}
 	public boolean isRootCase() {
-		return currentCmp.getReqid() == parentCmp.getReqid();
+		return currentCmp.equals(parentCmp);
 	}
 	
 	public boolean isDummy() {
 		return UNKNOWN.equals(typeCmp);
 	}
 	
-	public static RMRecord createDummy(Long parentNodeId) {
-		return new RMRecord(UNKNOWN, new Date(), UNKNOWN, 
-				new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
-				new RMComponent(0, UNKNOWN, 0, 0, parentNodeId, UNKNOWN), 
-				UNKNOWN, UNKNOWN + " / no root case", Long.MAX_VALUE);
+	public static RMRecord createDummy(String logSource, Date time, Long parentRequestId, String parentIp, long parentPid) {
+		return new RMRecord(logSource, time, UNKNOWN, 
+				new RMComponent(0, parentIp, 0, parentPid, parentRequestId, UNKNOWN), 
+				new RMComponent(0, parentIp, 0, parentPid, parentRequestId, UNKNOWN), 
+				UNKNOWN, UNKNOWN + " / unknown parent event", 0);
+	}
+	
+	public void addElapsedTime(long additionalTime) {
+		elapsedTime += additionalTime;
 	}
 }

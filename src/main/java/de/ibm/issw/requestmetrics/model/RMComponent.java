@@ -47,4 +47,18 @@ public class RMComponent {
 			.append(",event=").append(event);
 		return sb.toString();
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof RMComponent) {
+			RMComponent other = (RMComponent) o;
+			return this.pid == other.pid && this.ip == other.ip && this.reqid == other.reqid;
+		}
+		return super.equals(o);
+	}
+	
+	@Override
+	public int hashCode() {
+		return (ip + ";" + pid + ";" + reqid).hashCode();
+	}
 }
